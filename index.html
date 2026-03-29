@@ -784,14 +784,18 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
   document.getElementById('auth-status').textContent = error ? `エラー: ${error.message}` : `✓ ${email} にリンクを送りました`;
 });
 
-async function initAuth() {
-  const { data: { session } } = await supa.auth.getSession();
-  currentUser = session?.user || null;
-  updateAuthUI();
+function initAuth() {
+  // リスナーを先に登録してからセッション確認
   supa.auth.onAuthStateChange((_event, session) => {
     currentUser = session?.user || null;
     updateAuthUI();
     if (currentBase64) updateUsageUI();
+  });
+
+  // マジックリンクのURLハッシュを処理 & 既存セッション確認
+  supa.auth.getSession().then(({ data: { session } }) => {
+    currentUser = session?.user || null;
+    updateAuthUI();
   });
 }
 initAuth();
