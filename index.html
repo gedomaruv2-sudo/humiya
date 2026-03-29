@@ -103,6 +103,86 @@
   .analyze-btn:hover { opacity: 0.88; }
   .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+  /* Usage counter */
+  .usage-bar {
+    display: none;
+    margin-bottom: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .usage-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .usage-label strong { color: var(--text); }
+  .usage-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .usage-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
+  .usage-fill.danger { background: var(--red); }
+
+  /* Paywall overlay */
+  .paywall-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .paywall-overlay.open { display: flex; }
+  .paywall-card {
+    background: #1a1a1a;
+    border: 1px solid var(--border-hover);
+    border-radius: 20px;
+    padding: 32px 24px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+  }
+  .paywall-icon { font-size: 36px; margin-bottom: 12px; }
+  .paywall-card h3 { font-size: 20px; font-weight: 500; margin-bottom: 8px; }
+  .paywall-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 24px; }
+  .paywall-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #0d0d0d;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: opacity 0.2s;
+  }
+  .paywall-btn:hover { opacity: 0.88; }
+  .paywall-close {
+    display: block;
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+    border: 1px solid var(--border-hover);
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .paywall-reset { font-size: 11px; color: var(--muted); margin-top: 12px; }
+
   /* Style selector */
   .style-selector {
     display: none;
@@ -394,6 +474,11 @@
     </div>
   </div>
 
+  <div class="usage-bar" id="usage-bar">
+    <span class="usage-label">今月の無料診断：<strong id="usage-text">残り5回</strong></span>
+    <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
+  </div>
+
   <button class="analyze-btn" id="analyze-btn">✦ 診断する</button>
 
   <div class="preview-wrap" id="preview-wrap">
@@ -456,6 +541,18 @@
     <div class="tooltip-desc" id="tooltip-desc"></div>
     <div class="tooltip-tip" id="tooltip-tip"></div>
     <button class="tooltip-close" id="tooltip-close">閉じる</button>
+  </div>
+</div>
+
+<!-- Paywall overlay -->
+<div class="paywall-overlay" id="paywall-overlay">
+  <div class="paywall-card">
+    <div class="paywall-icon">📸</div>
+    <h3>今月の無料診断を使い切りました</h3>
+    <p>無料プランは月5回まで。<br>1枚¥120で続けるか、来月まで待てます。</p>
+    <button class="paywall-btn" id="paywall-buy">この1枚を診断する — ¥120</button>
+    <button class="paywall-close" id="paywall-close">来月まで待つ</button>
+    <p class="paywall-reset" id="paywall-reset"></p>
   </div>
 </div>
 
@@ -551,6 +648,53 @@ let currentBase64 = null;
 let currentMime = null;
 let currentStyle = '明るくきれいに';
 
+const FREE_LIMIT = 5;
+
+function getUsage() {
+  const now = new Date();
+  const month = `${now.getFullYear()}-${now.getMonth()}`;
+  const stored = JSON.parse(localStorage.getItem('ps_usage') || '{}');
+  if (stored.month !== month) return { count: 0, month };
+  return stored;
+}
+
+function saveUsage(usage) {
+  localStorage.setItem('ps_usage', JSON.stringify(usage));
+}
+
+function updateUsageUI() {
+  const usage = getUsage();
+  const remaining = Math.max(0, FREE_LIMIT - usage.count);
+  const bar = document.getElementById('usage-bar');
+  const text = document.getElementById('usage-text');
+  const fill = document.getElementById('usage-fill');
+  bar.style.display = 'flex';
+  text.textContent = `残り${remaining}回`;
+  const pct = (remaining / FREE_LIMIT) * 100;
+  fill.style.width = pct + '%';
+  fill.classList.toggle('danger', remaining <= 1);
+}
+
+function showPaywall() {
+  const now = new Date();
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const days = Math.ceil((nextMonth - now) / (1000 * 60 * 60 * 24));
+  document.getElementById('paywall-reset').textContent = `無料回数のリセットまで約${days}日`;
+  document.getElementById('paywall-overlay').classList.add('open');
+}
+
+document.getElementById('paywall-close').addEventListener('click', () => {
+  document.getElementById('paywall-overlay').classList.remove('open');
+});
+document.getElementById('paywall-buy').addEventListener('click', () => {
+  // Stripe連携後にここを実装
+  alert('決済機能は近日公開予定です');
+});
+document.getElementById('paywall-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('paywall-overlay'))
+    document.getElementById('paywall-overlay').classList.remove('open');
+});
+
 document.querySelectorAll('.style-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
@@ -617,6 +761,7 @@ function loadFile(file) {
     previewImg.src = dataUrl;
     uploadZone.style.display = 'none';
     document.getElementById('style-selector').style.display = 'block';
+    updateUsageUI();
     previewWrap.style.display = 'block';
     analyzeBtn.style.display = 'block';
     results.style.display = 'none';
@@ -770,6 +915,12 @@ function applyEditsCanvas(sourceImg, params) {
 }
 
 async function analyze() {
+  const usage = getUsage();
+  if (usage.count >= FREE_LIMIT) {
+    showPaywall();
+    return;
+  }
+
   analyzeBtn.disabled = true;
   analyzeBtn.textContent = '解析中...';
   loading.style.display = 'block';
@@ -784,6 +935,12 @@ async function analyze() {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+
+    // 使用回数を記録
+    usage.count += 1;
+    saveUsage(usage);
+    updateUsageUI();
+
     renderResults(data);
   } catch (err) {
     errorMsg.textContent = 'エラー: ' + err.message;
