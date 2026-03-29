@@ -701,6 +701,8 @@
     <span class="usage-label" id="usage-label">確認中...</span>
     <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
   </div>
+  <!-- DEV ONLY -->
+  <p style="text-align:center;margin-top:6px"><button onclick="devResetUsage()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;text-decoration:underline">［開発用］使用回数をリセット</button></p>
 
   <button class="analyze-btn" id="analyze-btn">✦ 診断する</button>
 
@@ -966,6 +968,16 @@ async function devResetUsage() {
     const { error } = await supa.from('user_usage')
       .update({ count: 0, updated_at: new Date().toISOString() })
       .eq('user_id', currentUser.id);
+    if (error) { alert('DBエラー: ' + error.message); return; }
+  }
+  await updateUsageUI();
+  alert('リセットしました');
+}
+
+async function devResetUsage() {
+  localStorage.removeItem('ps_usage');
+  if (currentUser) {
+    const { error } = await supa.from('user_usage').update({ count: 0, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
     if (error) { alert('DBエラー: ' + error.message); return; }
   }
   await updateUsageUI();
