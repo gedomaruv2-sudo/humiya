@@ -1575,13 +1575,12 @@ function loadFile(file) {
   const reader = new FileReader();
   reader.onload = async e => {
     const raw = e.target.result;
-    // API送信用：長辺1600px・品質0.82
-    const dataUrl = await compressImage(raw, 1600, 0.82);
+    // 長辺1600px・品質0.95（API送信 + 表示兼用）
+    const dataUrl = await compressImage(raw, 1600, 0.95);
     currentMime = 'image/jpeg';
     currentBase64 = dataUrl.split(',')[1];
-    // canvas用：長辺2400px・品質0.97（高画質）
-    currentOriginalSrc = await compressImage(raw, 2400, 0.97);
-    previewImg.src = currentOriginalSrc;
+    currentOriginalSrc = dataUrl;
+    previewImg.src = dataUrl;
     uploadZone.style.display = 'none';
     document.getElementById('style-selector').style.display = 'block';
     updateUsageUI(); // async, no await needed here
