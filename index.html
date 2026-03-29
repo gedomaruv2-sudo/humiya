@@ -1101,7 +1101,14 @@ function cancelSubscription() {
   const email = currentUser.email || '';
   const [local, domain] = email.split('@');
   const masked = local.length <= 2 ? local[0] + '***@' + domain : local.slice(0, 2) + '***@' + domain;
-  document.getElementById('cancel-email-hint').innerHTML = `登録メール：${masked}&nbsp;<button onclick="navigator.clipboard.writeText('${email}').then(()=>{document.getElementById('cancel-email-input').value='${email}'})" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:var(--accent);font-size:10px;cursor:pointer;padding:2px 7px;font-family:inherit;">入力する</button>`;
+  const hint = document.getElementById('cancel-email-hint');
+  const fillBtn = document.createElement('button');
+  fillBtn.textContent = '入力する';
+  fillBtn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:var(--accent);font-size:10px;cursor:pointer;padding:2px 7px;font-family:inherit;';
+  fillBtn.onclick = () => { document.getElementById('cancel-email-input').value = email; };
+  hint.innerHTML = '';
+  hint.appendChild(document.createTextNode('登録メール：' + masked + '\u00a0'));
+  hint.appendChild(fillBtn);
   document.getElementById('cancel-email-input').value = '';
   document.getElementById('cancel-email-error').textContent = '';
   document.getElementById('cancel-sub-overlay').classList.add('open');
