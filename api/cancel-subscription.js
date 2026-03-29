@@ -44,9 +44,7 @@ module.exports = async function handler(req, res) {
     });
     const cancelData = await cancelRes.json();
 
-    if (cancelData.error) {
-      return res.status(500).json({ error: cancelData.error.message });
-    }
+    // Stripeでエラーでもローカルをinactiveに更新（例: 既にキャンセル済み）
 
     // SupabaseのステータスをInactiveに更新
     await fetch(`${supaUrl}/rest/v1/user_subscriptions?user_id=eq.${userId}`, {
