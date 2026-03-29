@@ -726,6 +726,12 @@
   </div>
 
   <div class="results" id="results">
+    <!-- 履歴ナビ -->
+    <div id="history-nav" style="display:none;align-items:center;justify-content:space-between;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;">
+      <button id="hist-prev" onclick="navigateHistory(-1)" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:0 8px;">‹</button>
+      <button onclick="document.getElementById('history-overlay').classList.add('open')" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;">履歴一覧に戻る</button>
+      <button id="hist-next" onclick="navigateHistory(1)" style="background:none;border:none;color:var(--accent);font-size:20px;cursor:pointer;padding:0 8px;">›</button>
+    </div>
     <div class="scene-summary" id="scene-summary"></div>
 
     <!-- Premium before/after -->
@@ -1179,17 +1185,19 @@ function renderHistory(items) {
   // クリックで過去の診断を表示
   el.querySelectorAll('.history-item').forEach(el => {
     el.addEventListener('click', () => {
-      const item = _historyItems[parseInt(el.dataset.index)];
+      const index = parseInt(el.dataset.index);
       document.getElementById('history-overlay').classList.remove('open');
-      showHistoryResult(item);
+      showHistoryResult(_historyItems[index], index);
     });
   });
 }
 
 let _historyItems = [];
+let _historyIndex = -1;
 
-function showHistoryResult(item) {
+function showHistoryResult(item, index) {
   if (!item.thumbnail) return;
+  _historyIndex = index;
   const thumbSrc = `data:image/jpeg;base64,${item.thumbnail}`;
   const img = new Image();
   img.onload = () => {
@@ -1205,9 +1213,22 @@ function showHistoryResult(item) {
     document.getElementById('style-selector').style.display = 'none';
     previewWrap.style.display = 'block';
     analyzeBtn.style.display = 'none';
-    renderResults({ scene: item.scene, params: item.params, advice: item.advice || '' });
+    renderResults({ scene: item.scene, params: item.params, advice: item.advice || '' }, true);
+
+    // ナビ表示・更新
+    const nav = document.getElementById('history-nav');
+    nav.style.display = 'flex';
+    document.getElementById('hist-prev').style.opacity = index > 0 ? '1' : '0.2';
+    document.getElementById('hist-next').style.opacity = index < _historyItems.length - 1 ? '1' : '0.2';
   };
   img.src = thumbSrc;
+}
+
+function navigateHistory(dir) {
+  const next = _historyIndex + dir;
+  if (next < 0 || next >= _historyItems.length) return;
+  showHistoryResult(_historyItems[next], next);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 document.getElementById('history-btn').addEventListener('click', async () => {
@@ -1547,7 +1568,8 @@ async function analyze() {
   }
 }
 
-function renderResults(data) {
+function renderResults(data, fromHistory = false) {
+  document.getElementById('history-nav').style.display = fromHistory ? 'flex' : 'none';
   document.getElementById('scene-summary').innerHTML = `
     <div class="scene-label">写真の分析</div>
     <div class="scene-text">${escHtml(data.scene)}</div>
