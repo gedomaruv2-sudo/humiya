@@ -1149,7 +1149,7 @@ document.getElementById('cancel-sub-ok').addEventListener('click', async () => {
       errEl.textContent = 'エラー: ' + (data.error || '不明なエラー');
     }
   } catch (e) {
-    errEl.textContent = '通信エラーが発生しました';
+    errEl.textContent = 'エラー: ' + (e.message || '通信エラーが発生しました');
   } finally {
     btn.textContent = '解約する';
     btn.disabled = false;
