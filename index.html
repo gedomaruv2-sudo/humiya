@@ -453,7 +453,7 @@
   }
   .ba-grid { display: flex; }
   .ba-item { position: relative; flex: 1; min-width: 0; }
-  .ba-item img { width: 100%; height: 220px; object-fit: cover; display: block; }
+  .ba-item img { width: 100%; height: auto; max-height: 380px; object-fit: contain; display: block; background: #111; }
   .ba-label {
     position: absolute;
     bottom: 8px;
@@ -1138,8 +1138,14 @@ document.getElementById('howto-close').addEventListener('click', () => {
   howto.style.opacity = '0';
   howto.style.transform = 'translateY(-8px)';
   setTimeout(() => { howto.style.display = 'none'; }, 300);
+  localStorage.setItem('howto_seen', '1');
   document.getElementById('upload-zone').scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
+
+// 初回以外は使い方を非表示
+if (localStorage.getItem('howto_seen')) {
+  document.getElementById('howto').style.display = 'none';
+}
 
 document.getElementById('paywall-close').addEventListener('click', () => document.getElementById('paywall-overlay').classList.remove('open'));
 document.getElementById('paywall-overlay').addEventListener('click', e => { if (e.target === document.getElementById('paywall-overlay')) document.getElementById('paywall-overlay').classList.remove('open'); });
@@ -1481,7 +1487,7 @@ function applyEditsCanvas(sourceImg, params) {
   return new Promise(resolve => {
     const get = name => { const p = params.find(p => p.name === name); return p ? p.value : 0; };
 
-    const maxDim = 900;
+    const maxDim = 1600;
     const nw = sourceImg.naturalWidth || 800;
     const nh = sourceImg.naturalHeight || 600;
     const scale = Math.min(1, maxDim / Math.max(nw, nh));
@@ -1617,7 +1623,7 @@ function applyEditsCanvas(sourceImg, params) {
       ctx.fillStyle=grad; ctx.fillRect(0,0,w,h);
     }
 
-    resolve(canvas.toDataURL('image/jpeg', 0.92));
+    resolve(canvas.toDataURL('image/jpeg', 0.97));
   });
 }
 
