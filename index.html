@@ -748,16 +748,8 @@ document.getElementById('paywall-overlay').addEventListener('click', e => { if (
 
 // Auth
 function updateAuthUI() {
-  const emailEl = document.getElementById('auth-user-email');
   const btn = document.getElementById('auth-toggle-btn');
-  if (currentUser) {
-    emailEl.textContent = currentUser.email;
-    emailEl.style.display = 'inline';
-    btn.textContent = 'ログアウト';
-  } else {
-    emailEl.style.display = 'none';
-    btn.textContent = 'ログイン';
-  }
+  btn.textContent = currentUser ? 'ログアウト' : 'ログイン';
 }
 
 document.getElementById('auth-toggle-btn').addEventListener('click', async () => {
