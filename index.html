@@ -713,6 +713,51 @@
       </svg>
       <p style="font-size:11px;color:var(--muted);line-height:1.6;">「露出」「彩度」などの用語をタップすると<br>このような解説がポップアップで表示されます</p>
     </div>
+
+    <!-- 履歴ヒント -->
+    <div style="margin-top:14px;padding:16px;background:rgba(110,170,212,0.08);border:1px solid rgba(110,170,212,0.25);border-radius:12px;text-align:center;">
+      <p style="font-size:12px;color:#6eaad4;font-weight:500;margin-bottom:12px;">📋 履歴ボタンで過去の診断を見返せます</p>
+      <svg viewBox="0 0 300 150" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:300px;margin-bottom:10px;">
+        <!-- 履歴モーダル背景 -->
+        <rect x="20" y="8" width="260" height="134" rx="12" fill="#1a1a1a" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+        <!-- モーダルヘッダー -->
+        <text x="36" y="30" font-size="13" fill="#f0ece4" font-family="sans-serif" font-weight="600">診断履歴</text>
+        <text x="265" y="30" font-size="14" fill="#7a7670" font-family="sans-serif" text-anchor="end">✕</text>
+        <line x1="20" y1="38" x2="280" y2="38" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+        <!-- 履歴アイテム1 -->
+        <rect x="30" y="46" width="240" height="38" rx="8" fill="#232323" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <!-- サムネイル1 -->
+        <rect x="40" y="53" width="26" height="24" rx="5" fill="#2a3a2a"/>
+        <polygon points="40,77 53,60 60,70 66,63 66,77" fill="#3a5a3a"/>
+        <circle cx="57" cy="57" r="4" fill="#d4a55a" opacity="0.8"/>
+        <!-- テキスト1 -->
+        <text x="74" y="64" font-size="10" fill="#d4a55a" font-family="sans-serif" font-weight="500">☀️ 明るくきれいに</text>
+        <text x="74" y="77" font-size="8.5" fill="#7a7670" font-family="sans-serif">2026/3/29 14:05</text>
+        <text x="262" y="68" font-size="11" fill="#7a7670" font-family="sans-serif" text-anchor="end">詳細 ›</text>
+
+        <!-- 履歴アイテム2 -->
+        <rect x="30" y="92" width="240" height="38" rx="8" fill="#232323" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+        <!-- サムネイル2 -->
+        <rect x="40" y="99" width="26" height="24" rx="5" fill="#2a2a3a"/>
+        <rect x="40" y="99" width="26" height="24" rx="5" fill="url(#cityGrad)"/>
+        <defs>
+          <linearGradient id="cityGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1a2a4a"/>
+            <stop offset="100%" stop-color="#0a0a1a"/>
+          </linearGradient>
+        </defs>
+        <rect x="43" y="111" width="5" height="12" fill="#3a4a6a"/>
+        <rect x="50" y="107" width="5" height="16" fill="#4a5a7a"/>
+        <rect x="57" y="113" width="5" height="10" fill="#3a4a6a"/>
+        <!-- テキスト2 -->
+        <text x="74" y="110" font-size="10" fill="#a88beb" font-family="sans-serif" font-weight="500">🎬 映画みたいに</text>
+        <text x="74" y="123" font-size="8.5" fill="#7a7670" font-family="sans-serif">2026/3/28 19:42</text>
+        <text x="262" y="114" font-size="11" fill="#7a7670" font-family="sans-serif" text-anchor="end">詳細 ›</text>
+      </svg>
+      <p style="font-size:11px;color:var(--muted);line-height:1.6;">ログインすると過去の診断がここに保存されます<br>タップすると編集値・ビフォーアフターを再確認できます</p>
+    </div>
+
     <button class="howto-close" id="howto-close">さっそく試す →</button>
   </div>
 
