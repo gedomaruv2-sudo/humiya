@@ -1220,7 +1220,12 @@ document.getElementById('paywall-subscribe').addEventListener('click', () => sta
       ? '月額プランへの登録が完了しました！診断が無制限になりました 🎉'
       : '決済が完了しました！診断をお楽しみください 🎉';
     setTimeout(() => alert(msg), 300);
-    // Remove query params from URL
+    // Webhookの処理を待ってからUI更新
+    if (type === 'single') {
+      setTimeout(async () => { await updateUsageUI(); }, 4000);
+    } else if (type === 'subscription') {
+      setTimeout(async () => { await checkSubscription(); await updateUsageUI(); }, 4000);
+    }
     history.replaceState({}, '', location.pathname);
   } else if (status === 'cancel') {
     history.replaceState({}, '', location.pathname);
