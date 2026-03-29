@@ -581,6 +581,7 @@
     <p>写真をアップするだけで、iPhoneの編集値を具体的に提案します</p>
     <div class="auth-bar">
       <span class="auth-user" id="auth-user-email" style="display:none"></span>
+      <button class="auth-btn" id="howto-reopen-btn">使い方</button>
       <button class="auth-btn" id="history-btn" style="display:none">履歴</button>
       <button class="auth-btn" id="auth-toggle-btn">ログイン</button>
     </div>
@@ -1122,6 +1123,14 @@ function showPaywall() {
 
   document.getElementById('paywall-overlay').classList.add('open');
 }
+
+document.getElementById('howto-reopen-btn').addEventListener('click', () => {
+  const howto = document.getElementById('howto');
+  howto.style.display = 'block';
+  howto.style.opacity = '1';
+  howto.style.transform = 'translateY(0)';
+  howto.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 document.getElementById('howto-close').addEventListener('click', () => {
   const howto = document.getElementById('howto');
