@@ -1103,9 +1103,24 @@ function devFakeLogout() {
   updateUsageUI();
 }
 
-function saveAfterImage() {
+async function saveAfterImage() {
   const afterImg = document.getElementById('ba-after');
   if (!afterImg.src || afterImg.src === window.location.href) return;
+
+  // iOSはWeb Share APIで共有→フォトに保存
+  if (navigator.share && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    try {
+      const res = await fetch(afterImg.src);
+      const blob = await res.blob();
+      const file = new File([blob], 'photosense_after.jpg', { type: 'image/jpeg' });
+      await navigator.share({ files: [file] });
+    } catch (e) {
+      if (e.name !== 'AbortError') alert('保存できませんでした: ' + e.message);
+    }
+    return;
+  }
+
+  // その他（PC等）は通常ダウンロード
   const a = document.createElement('a');
   a.href = afterImg.src;
   a.download = 'photosense_after.jpg';
