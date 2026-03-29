@@ -1064,13 +1064,19 @@ async function updateUsageUI() {
   const fill = document.getElementById('usage-fill');
   const label = document.getElementById('usage-label');
   bar.style.display = 'flex';
-  if (currentUser) {
+  if (isSubscribed) {
+    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン</span>`;
+    fill.style.width = '100%';
+    fill.classList.remove('danger');
+  } else if (currentUser) {
     label.innerHTML = `今月の無料診断：<strong style="color:var(--accent)">${remaining}回</strong> 残り`;
+    fill.style.width = (remaining / limit * 100) + '%';
+    fill.classList.toggle('danger', remaining <= 1);
   } else {
     label.innerHTML = `無料：残り <strong style="color:var(--accent)">${remaining}回</strong> &nbsp;<span style="color:var(--muted);font-size:11px">／ ログインすると3回</span>`;
+    fill.style.width = (remaining / limit * 100) + '%';
+    fill.classList.toggle('danger', remaining <= 1);
   }
-  fill.style.width = (remaining / limit * 100) + '%';
-  fill.classList.toggle('danger', remaining <= 1);
 }
 
 async function devResetUsage() {
@@ -1210,7 +1216,7 @@ document.getElementById('paywall-subscribe').addEventListener('click', () => sta
   const type = params.get('type');
   if (status === 'success') {
     const msg = type === 'subscription'
-      ? '月額プランへの登録が完了しました！毎月10枚まで診断できます 🎉'
+      ? '月額プランへの登録が完了しました！診断が無制限になりました 🎉'
       : '決済が完了しました！診断をお楽しみください 🎉';
     setTimeout(() => alert(msg), 300);
     // Remove query params from URL
