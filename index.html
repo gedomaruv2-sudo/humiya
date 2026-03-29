@@ -1004,6 +1004,7 @@ const confirmOk = document.getElementById('confirm-ok');
 
 let currentBase64 = null;
 let currentMime = null;
+let currentOriginalSrc = null; // オリジナル画質（canvas用）
 let currentStyle = 'おまかせ';
 let isSubscribed = false;
 
@@ -1540,6 +1541,7 @@ function doReset() {
   results.style.display = 'none';
   errorMsg.style.display = 'none';
   currentBase64 = null;
+  currentOriginalSrc = null;
   fileInput.value = '';
 }
 
@@ -1573,11 +1575,13 @@ function loadFile(file) {
   const reader = new FileReader();
   reader.onload = async e => {
     const raw = e.target.result;
-    // 圧縮：長辺1600px以下・品質0.82
+    // API送信用：長辺1600px・品質0.82
     const dataUrl = await compressImage(raw, 1600, 0.82);
     currentMime = 'image/jpeg';
     currentBase64 = dataUrl.split(',')[1];
-    previewImg.src = dataUrl;
+    // canvas用：長辺2400px・品質0.97（高画質）
+    currentOriginalSrc = await compressImage(raw, 2400, 0.97);
+    previewImg.src = currentOriginalSrc;
     uploadZone.style.display = 'none';
     document.getElementById('style-selector').style.display = 'block';
     updateUsageUI(); // async, no await needed here
