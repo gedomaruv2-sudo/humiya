@@ -35,7 +35,7 @@
 
   header { text-align: center; margin-bottom: 40px; }
   .auth-bar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; }
-  .auth-user { font-size: 12px; color: var(--muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .auth-user { font-size: 13px; color: var(--text); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
   .auth-btn { font-size: 12px; color: var(--accent); background: transparent; border: 1px solid rgba(212,165,90,0.4); border-radius: 6px; padding: 4px 10px; font-family: inherit; cursor: pointer; transition: all 0.2s; }
   .auth-btn:hover { background: var(--accent-dim); }
 
@@ -1217,7 +1217,7 @@ function updateAuthUI() {
       || currentUser.user_metadata?.name
       || currentUser.email?.split('@')[0]
       || '';
-    emailEl.textContent = name;
+    emailEl.textContent = name ? `${name}さん` : '';
     emailEl.style.display = name ? 'inline' : 'none';
   } else {
     btn.textContent = 'ログイン';
