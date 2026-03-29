@@ -14,7 +14,10 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'API key not configured' });
   }
 
-  const styleGuide = style ? `\n【目標とする雰囲気】「${style}」という仕上がりを目指して編集値を提案してください。` : '';
+  const isAuto = style === 'おまかせ';
+  const styleGuide = isAuto
+    ? `\n【スタイル選択】写真の内容・雰囲気を見て、最も適した編集スタイルを以下から1つ選び "recommended_style" に入れてください：「明るくきれいに」「そのまま自然に」「映画みたいにかっこよく」「ふんわり柔らかく」「レトロ・フィルム風」「SNS映えする感じ」。そのスタイルに合わせた編集値を提案してください。`
+    : style ? `\n【目標とする雰囲気】「${style}」という仕上がりを目指して編集値を提案してください。` : '';
 
   const prompt = `あなたはプロの写真編集アドバイザーです。
 この写真を詳しく分析して、iPhoneの標準写真アプリの編集機能を使って仕上げるための具体的な数値をJSON形式で返してください。${styleGuide}
@@ -23,6 +26,7 @@ module.exports = async function handler(req, res) {
 
 {
   "scene": "写真の内容・状況の説明（2〜3文）",
+  "recommended_style": "おまかせ時のみ：選んだスタイル名",
   "params": [
     {"name": "露出", "en": "Exposure", "value": 0, "reason": "理由を一言で"},
     {"name": "ブリリアンス", "en": "Brilliance", "value": 0, "reason": "理由を一言で"},

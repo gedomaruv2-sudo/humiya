@@ -1,6 +1,7 @@
 {
   "functions": {
     "api/analyze.js": { "maxDuration": 30 },
-    "api/create-checkout.js": { "maxDuration": 10 }
+    "api/create-checkout.js": { "maxDuration": 10 },
+    "api/stripe-webhook.js": { "maxDuration": 10 }
   }
 }

@@ -3,7 +3,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { type } = req.body;
+  const { type, userId, userEmail } = req.body;
 
   if (!type || (type !== 'single' && type !== 'subscription')) {
     return res.status(400).json({ error: 'type must be "single" or "subscription"' });
@@ -22,6 +22,8 @@ module.exports = async function handler(req, res) {
   params.append('mode', isSubscription ? 'subscription' : 'payment');
   params.append('success_url', `${origin}?payment=success&type=${type}`);
   params.append('cancel_url', `${origin}?payment=cancel`);
+  if (userId) params.append('client_reference_id', userId);
+  if (userEmail) params.append('customer_email', userEmail);
   params.append('line_items[0][quantity]', '1');
   params.append('line_items[0][price_data][currency]', 'jpy');
   params.append('line_items[0][price_data][unit_amount]', isSubscription ? '480' : '150');

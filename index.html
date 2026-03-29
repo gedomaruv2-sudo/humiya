@@ -771,7 +771,8 @@
   <div class="style-selector" id="style-selector">
     <p class="style-label">どんな雰囲気にしたい？</p>
     <div class="style-grid">
-      <button class="style-btn active" data-style="明るくきれいに">☀️<br>明るく<br>きれいに</button>
+      <button class="style-btn active" data-style="おまかせ" style="grid-column:1/-1;background:var(--accent-dim);border-color:var(--accent);color:var(--accent);">🤖 写真に合わせて自動でおすすめ（おまかせ）</button>
+      <button class="style-btn" data-style="明るくきれいに">☀️<br>明るく<br>きれいに</button>
       <button class="style-btn" data-style="そのまま自然に">🌿<br>そのまま<br>自然に</button>
       <button class="style-btn" data-style="映画みたいにかっこよく">🎬<br>映画みたいに<br>かっこよく</button>
       <button class="style-btn" data-style="ふんわり柔らかく">🌸<br>ふんわり<br>柔らかく</button>
@@ -1003,7 +1004,15 @@ const confirmOk = document.getElementById('confirm-ok');
 
 let currentBase64 = null;
 let currentMime = null;
-let currentStyle = '明るくきれいに';
+let currentStyle = 'おまかせ';
+let isSubscribed = false;
+
+async function checkSubscription() {
+  if (!currentUser) { isSubscribed = false; return; }
+  const { data } = await supa.from('user_subscriptions').select('status').eq('user_id', currentUser.id).single();
+  isSubscribed = data?.status === 'active';
+}
+
 
 // Supabase
 const SUPA_URL = 'https://oxkaofryqzbmoaypegck.supabase.co';
@@ -1170,7 +1179,11 @@ async function startCheckout(type) {
     const res = await fetch('/api/create-checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type })
+      body: JSON.stringify({
+        type,
+        userId: currentUser?.id || null,
+        userEmail: currentUser?.email || null
+      })
     });
     const data = await res.json();
     if (data.url) {
@@ -1238,7 +1251,8 @@ async function saveHistory(data) {
   // dev用：大きめサムネイルをlocalStorageに保存
   if (isDevUser()) {
     const thumbDataUrl = await compressImage(previewImg.src, 800, 0.9);
-    const item = { id: diagId, user_id: currentUser.id, created_at: new Date().toISOString(), style: currentStyle, scene: data.scene, params: data.params, thumbnail: thumbDataUrl.split(',')[1] };
+    const savedStyle = (currentStyle === 'おまかせ' && data.recommended_style) ? `おまかせ→${data.recommended_style}` : currentStyle;
+    const item = { id: diagId, user_id: currentUser.id, created_at: new Date().toISOString(), style: savedStyle, scene: data.scene, params: data.params, thumbnail: thumbDataUrl.split(',')[1] };
     const local = JSON.parse(localStorage.getItem('dev_history') || '[]');
     local.unshift(item);
     localStorage.setItem('dev_history', JSON.stringify(local.slice(0, 20)));
@@ -1262,11 +1276,12 @@ async function saveHistory(data) {
   const thumbDataUrl = await compressImage(previewImg.src, 300, 0.8);
   const thumbnail = thumbDataUrl.split(',')[1];
 
+  const savedStyle = (currentStyle === 'おまかせ' && data.recommended_style) ? `おまかせ→${data.recommended_style}` : currentStyle;
   await supa.from('diagnosis_history').insert({
     id: diagId,
     user_id: currentUser.id,
     created_at: new Date().toISOString(),
-    style: currentStyle,
+    style: savedStyle,
     scene: data.scene,
     params: data.params,
     thumbnail,
@@ -1306,8 +1321,8 @@ function renderHistory(items) {
       ? `<img src="data:image/jpeg;base64,${item.thumbnail}" class="history-thumb">`
       : `<div class="history-thumb history-thumb-empty">📷</div>`;
 
-    // 3件目以降はロック
-    if (i >= FREE_HISTORY_LIMIT) {
+    // 3件目以降はロック（サブスク加入済みなら全件表示）
+    if (i >= FREE_HISTORY_LIMIT && !isSubscribed) {
       return `
         <div class="history-item" style="position:relative;overflow:hidden;cursor:default;">
           <div style="filter:blur(3px);pointer-events:none;opacity:0.4;">
@@ -1461,6 +1476,7 @@ function initAuth() {
     currentUser = session?.user || null;
     updateAuthUI();
     updateUsageUI();
+    checkSubscription();
   });
 
   // マジックリンクのURLハッシュを処理 & 既存セッション確認
@@ -1468,6 +1484,7 @@ function initAuth() {
     currentUser = session?.user || null;
     updateAuthUI();
     updateUsageUI(); // ページ読み込み時に正しい上限で表示
+    checkSubscription();
   });
 }
 initAuth();
@@ -1748,9 +1765,13 @@ async function analyze() {
 
 function renderResults(data, fromHistory = false) {
   document.getElementById('history-nav').style.display = fromHistory ? 'flex' : 'none';
+  const styleTag = data.recommended_style
+    ? `<div style="margin-top:8px;font-size:12px;color:var(--accent);">🤖 おまかせで選択：<strong>${escHtml(data.recommended_style)}</strong></div>`
+    : '';
   document.getElementById('scene-summary').innerHTML = `
     <div class="scene-label">写真の分析</div>
     <div class="scene-text">${escHtml(data.scene)}</div>
+    ${styleTag}
   `;
 
   // Before/after preview
