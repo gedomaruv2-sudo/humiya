@@ -63,6 +63,24 @@ async function handler(req, res) {
         stripe_subscription_id: obj.subscription,
         status: 'active',
       });
+    } else if (userId && obj.mode === 'payment') {
+      // 単発¥150: カウントを1減らして1回分復活
+      const r = await fetch(`${supaUrl}/rest/v1/user_usage?user_id=eq.${userId}`, {
+        headers: { 'apikey': supaServiceKey, 'Authorization': `Bearer ${supaServiceKey}` },
+      });
+      const rows = await r.json();
+      if (rows.length > 0) {
+        const newCount = Math.max(0, rows[0].count - 1);
+        await fetch(`${supaUrl}/rest/v1/user_usage?user_id=eq.${userId}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': supaServiceKey,
+            'Authorization': `Bearer ${supaServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ count: newCount, updated_at: new Date().toISOString() }),
+        });
+      }
     }
   }
 
