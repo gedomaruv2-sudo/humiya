@@ -1144,6 +1144,10 @@ function renderHistory(items) {
 
 document.getElementById('history-btn').addEventListener('click', async () => {
   document.getElementById('history-overlay').classList.add('open');
+  if (!currentUser) {
+    document.getElementById('history-list').innerHTML = '<p class="history-empty">ログインすると診断履歴が保存・閲覧できます</p>';
+    return;
+  }
   document.getElementById('history-list').innerHTML = '<p class="history-empty">読み込み中...</p>';
   const items = await loadHistory();
   renderHistory(items);
