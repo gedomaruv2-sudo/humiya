@@ -1211,25 +1211,46 @@ function isDevUser() { return currentUser && currentUser.id === DEV_USER_ID; }
 
 async function saveHistory(data) {
   if (!currentUser) return;
-  // サムネイル生成（200px幅・低品質で軽量化）
-  const thumbDataUrl = await compressImage(previewImg.src, 200, 0.7);
-  const thumbnail = thumbDataUrl.split(',')[1];
-  const item = {
-    id: crypto.randomUUID(),
-    user_id: currentUser.id,
-    created_at: new Date().toISOString(),
-    style: currentStyle,
-    scene: data.scene,
-    params: data.params,
-    thumbnail
-  };
+
+  const diagId = crypto.randomUUID();
+
+  // dev用：小サムネイルをlocalStorageに保存
   if (isDevUser()) {
+    const thumbDataUrl = await compressImage(previewImg.src, 200, 0.7);
+    const item = { id: diagId, user_id: currentUser.id, created_at: new Date().toISOString(), style: currentStyle, scene: data.scene, params: data.params, thumbnail: thumbDataUrl.split(',')[1] };
     const local = JSON.parse(localStorage.getItem('dev_history') || '[]');
     local.unshift(item);
     localStorage.setItem('dev_history', JSON.stringify(local.slice(0, 20)));
     return;
   }
-  await supa.from('diagnosis_history').insert(item);
+
+  // Supabase Storage にフルサイズ画像をアップロード
+  const imageBlob = await (await fetch(previewImg.src)).blob();
+  const filePath = `${currentUser.id}/${diagId}.jpg`;
+  const { error: uploadError } = await supa.storage
+    .from('diagnosis-images')
+    .upload(filePath, imageBlob, { contentType: 'image/jpeg', upsert: true });
+
+  let image_url = null;
+  if (!uploadError) {
+    const { data: urlData } = supa.storage.from('diagnosis-images').getPublicUrl(filePath);
+    image_url = urlData.publicUrl;
+  }
+
+  // サムネイル（リスト表示用・小さめ）
+  const thumbDataUrl = await compressImage(previewImg.src, 200, 0.7);
+  const thumbnail = thumbDataUrl.split(',')[1];
+
+  await supa.from('diagnosis_history').insert({
+    id: diagId,
+    user_id: currentUser.id,
+    created_at: new Date().toISOString(),
+    style: currentStyle,
+    scene: data.scene,
+    params: data.params,
+    thumbnail,
+    image_url
+  });
 }
 
 async function loadHistory() {
@@ -1291,15 +1312,17 @@ let _historyItems = [];
 let _historyIndex = -1;
 
 function showHistoryResult(item, index) {
-  if (!item.thumbnail) return;
+  if (!item.thumbnail && !item.image_url) return;
   _historyIndex = index;
-  const thumbSrc = `data:image/jpeg;base64,${item.thumbnail}`;
+  // image_urlがあればフルサイズ、なければサムネイルで代用
+  const imgSrc = item.image_url || `data:image/jpeg;base64,${item.thumbnail}`;
   const img = new Image();
+  img.crossOrigin = 'anonymous';
   img.onload = () => {
-    previewImg.src = thumbSrc;
-    document.getElementById('ba-before').src = thumbSrc;
+    previewImg.src = imgSrc;
+    document.getElementById('ba-before').src = imgSrc;
     const afterImg = document.getElementById('ba-after');
-    afterImg.src = thumbSrc;
+    afterImg.src = imgSrc;
     applyEditsCanvas(img, item.params || []).then(url => {
       afterImg.src = url;
       document.getElementById('save-btn').style.display = 'block';
@@ -1316,7 +1339,7 @@ function showHistoryResult(item, index) {
     document.getElementById('hist-prev').style.opacity = index > 0 ? '1' : '0.2';
     document.getElementById('hist-next').style.opacity = index < _historyItems.length - 1 ? '1' : '0.2';
   };
-  img.src = thumbSrc;
+  img.src = imgSrc;
 }
 
 function navigateHistory(dir) {
