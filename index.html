@@ -848,7 +848,7 @@
 </div>
 
 <div style="text-align:center;padding:24px 0 40px;font-size:12px;color:var(--muted);">
-  お問い合わせ：<a href="mailto:humiyaandsora@gmail.com" style="color:var(--accent);text-decoration:none;">humiyaandsora@gmail.com</a>
+  <a href="mailto:humiyaandsora@gmail.com" style="color:var(--accent);text-decoration:none;">お問い合わせ</a>
 </div>
 
 <!-- Tooltip overlay -->
@@ -1064,7 +1064,10 @@ async function updateUsageUI() {
   const label = document.getElementById('usage-label');
   bar.style.display = 'flex';
   if (isSubscribed) {
-    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン &nbsp;<button onclick="cancelSubscription()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">解約する</button></span>`;
+    const email = currentUser.email || '';
+    const [local, domain] = email.split('@');
+    const maskedEmail = local.length <= 2 ? local[0] + '***@' + domain : local.slice(0, 2) + '***@' + domain;
+    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン &nbsp;<button onclick="cancelSubscription()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">解約する</button></span><br><span style="font-size:10px;color:var(--muted);">登録メール：${maskedEmail}&nbsp;<button onclick="navigator.clipboard.writeText('${email}').then(()=>alert('コピーしました'))" style="background:none;border:1px solid rgba(255,255,255,0.2);border-radius:4px;color:var(--muted);font-size:9px;cursor:pointer;padding:1px 5px;font-family:inherit;">コピー</button></span>`;
     fill.style.width = '100%';
     fill.classList.remove('danger');
   } else if (currentUser) {
