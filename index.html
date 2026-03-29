@@ -557,7 +557,7 @@
 
   <header>
     <h1>Photo<span>Sense</span></h1>
-    <p>写真を診断 — iPhoneの編集値を具体的に提案します</p>
+    <p>写真をアップするだけで、iPhoneの編集値を具体的に提案します</p>
     <div class="auth-bar">
       <span class="auth-user" id="auth-user-email" style="display:none"></span>
       <button class="auth-btn" id="auth-toggle-btn">ログイン</button>
@@ -654,7 +654,7 @@
         </div>
         <div class="howto-num">03</div>
         <div class="howto-label">編集値をゲット</div>
-        <div class="howto-desc">AIが具体的な数値を<br>理由つきで提案</div>
+        <div class="howto-desc">プロ目線で編集値を<br>理由つきで提案</div>
       </div>
 
     </div>
@@ -754,7 +754,12 @@
 <div class="auth-overlay" id="auth-overlay">
   <div class="auth-card">
     <h3>ログイン / 新規登録</h3>
-    <p>メールアドレスを入力するとログインリンクを送ります。パスワード不要です。<br>ログインすると使用回数がデバイスをまたいで管理されます。</p>
+    <p>
+      ✦ 無料診断が月<strong style="color:#d4a55a">3回</strong>に増える（ゲストは1回）<br>
+      ✦ 診断履歴を保存・見返せる<br>
+      ✦ どのデバイスでも使用回数が引き継がれる<br><br>
+      <span style="font-size:12px">メールアドレスを入力するとログインリンクを送ります。パスワード不要です。</span>
+    </p>
     <input class="auth-input" type="email" id="auth-email" placeholder="example@gmail.com">
     <button class="auth-submit" id="auth-submit-btn">ログインリンクを送る</button>
     <div class="auth-status" id="auth-status"></div>
@@ -766,8 +771,8 @@
 <div class="paywall-overlay" id="paywall-overlay">
   <div class="paywall-card">
     <div class="paywall-icon">📸</div>
-    <h3>今月の無料診断を使い切りました</h3>
-    <p>無料プランは月3回まで。<br>1枚¥150で続けるか、月額¥480で使い放題にできます。</p>
+    <h3 id="paywall-title">今月の無料診断を使い切りました</h3>
+    <p id="paywall-desc">1枚¥150で続けるか、月額¥480で使い放題にできます。</p>
     <button class="paywall-btn" id="paywall-buy">この1枚を診断する — ¥150</button>
     <button class="paywall-btn" id="paywall-subscribe" style="background:#2563eb;">月額プランに登録する — ¥480/月</button>
     <button class="paywall-close" id="paywall-close">来月まで待つ</button>
@@ -873,7 +878,9 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 let currentUser = null;
 
-const FREE_LIMIT = 3;
+const FREE_LIMIT_GUEST = 1;   // ログインなし
+const FREE_LIMIT_USER  = 3;   // ログインあり
+function getFreeLimit() { return currentUser ? FREE_LIMIT_USER : FREE_LIMIT_GUEST; }
 
 function currentMonth() {
   const now = new Date();
@@ -908,13 +915,14 @@ async function incrementUsage() {
 
 async function updateUsageUI() {
   const usage = await getUsage();
-  const remaining = Math.max(0, FREE_LIMIT - usage.count);
+  const limit = getFreeLimit();
+  const remaining = Math.max(0, limit - usage.count);
   const bar = document.getElementById('usage-bar');
   const text = document.getElementById('usage-text');
   const fill = document.getElementById('usage-fill');
   bar.style.display = 'flex';
-  text.textContent = `残り${remaining}回`;
-  fill.style.width = (remaining / FREE_LIMIT * 100) + '%';
+  text.textContent = currentUser ? `残り${remaining}回（ログイン中）` : `残り${remaining}回`;
+  fill.style.width = (remaining / limit * 100) + '%';
   fill.classList.toggle('danger', remaining <= 1);
 }
 
@@ -931,6 +939,36 @@ function showPaywall() {
   const now = new Date();
   const days = Math.ceil((new Date(now.getFullYear(), now.getMonth()+1, 1) - now) / 86400000);
   document.getElementById('paywall-reset').textContent = `無料回数のリセットまで約${days}日`;
+
+  if (!currentUser) {
+    document.getElementById('paywall-title').textContent = '無料診断（月1回）を使い切りました';
+    document.getElementById('paywall-desc').innerHTML =
+      'ログインすると無料で月3回まで使えます。<br>または1枚¥150で今すぐ続けることもできます。';
+    // ログインへ誘導ボタンを差し込む（一度だけ）
+    if (!document.getElementById('paywall-login-btn')) {
+      const loginBtn = document.createElement('button');
+      loginBtn.id = 'paywall-login-btn';
+      loginBtn.className = 'paywall-btn';
+      loginBtn.style.background = '#2a2a2a';
+      loginBtn.style.border = '1px solid rgba(212,165,90,0.5)';
+      loginBtn.style.color = '#d4a55a';
+      loginBtn.style.marginBottom = '8px';
+      loginBtn.textContent = '無料でログインして3回使う';
+      loginBtn.addEventListener('click', () => {
+        document.getElementById('paywall-overlay').classList.remove('open');
+        document.getElementById('auth-overlay').classList.add('open');
+        document.getElementById('auth-status').textContent = '';
+      });
+      document.getElementById('paywall-buy').insertAdjacentElement('beforebegin', loginBtn);
+    }
+  } else {
+    document.getElementById('paywall-title').textContent = '今月の無料診断を使い切りました';
+    document.getElementById('paywall-desc').innerHTML =
+      '1枚¥150で続けるか、月額¥480で使い放題にできます。';
+    const lb = document.getElementById('paywall-login-btn');
+    if (lb) lb.style.display = 'none';
+  }
+
   document.getElementById('paywall-overlay').classList.add('open');
 }
 
@@ -1263,7 +1301,7 @@ function applyEditsCanvas(sourceImg, params) {
 
 async function analyze() {
   const usage = await getUsage();
-  if (usage.count >= FREE_LIMIT) {
+  if (usage.count >= getFreeLimit()) {
     showPaywall();
     return;
   }
