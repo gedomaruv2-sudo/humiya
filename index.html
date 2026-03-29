@@ -1094,7 +1094,7 @@ document.getElementById('paywall-subscribe').addEventListener('click', () => sta
 function updateAuthUI() {
   const btn = document.getElementById('auth-toggle-btn');
   btn.textContent = currentUser ? 'ログアウト' : 'ログイン';
-  document.getElementById('history-btn').style.display = currentUser ? 'inline-block' : 'none';
+  document.getElementById('history-btn').style.display = 'inline-block'; // DEV: always visible
 }
 
 // History
