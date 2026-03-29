@@ -847,6 +847,10 @@
 
 </div>
 
+<div style="text-align:center;padding:24px 0 40px;font-size:12px;color:var(--muted);">
+  お問い合わせ：<a href="mailto:humiyaandsora@gmail.com" style="color:var(--accent);text-decoration:none;">humiyaandsora@gmail.com</a>
+</div>
+
 <!-- Tooltip overlay -->
 <div class="tooltip-overlay" id="tooltip-overlay">
   <div class="tooltip-card">
@@ -1060,7 +1064,7 @@ async function updateUsageUI() {
   const label = document.getElementById('usage-label');
   bar.style.display = 'flex';
   if (isSubscribed) {
-    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン &nbsp;<button onclick="cancelSubscription()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">解約する</button></span>`;
+    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン &nbsp;<button onclick="cancelSubscription()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">解約する</button></span><br><span style="font-size:10px;color:var(--muted);">登録メール：${currentUser.email}</span>`;
     fill.style.width = '100%';
     fill.classList.remove('danger');
   } else if (currentUser) {
