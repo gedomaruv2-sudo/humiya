@@ -30,7 +30,7 @@ module.exports = async function handler(req, res) {
   params.append('line_items[0][price_data][product_data][name]',
     isSubscription ? 'PhotoSense スタンダードプラン' : 'PhotoSense 1枚診断');
   params.append('line_items[0][price_data][product_data][description]',
-    isSubscription ? '毎月10枚まで診断できる月額プラン' : '1枚分の写真診断');
+    isSubscription ? '診断が無制限・履歴もすべて閲覧できる月額プラン' : '1枚分の写真診断');
   if (isSubscription) {
     params.append('line_items[0][price_data][recurring][interval]', 'month');
   }
