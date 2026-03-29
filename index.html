@@ -683,6 +683,8 @@
     <span class="usage-label" id="usage-label">確認中...</span>
     <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
   </div>
+  <!-- DEV ONLY: remove before launch -->
+  <p style="text-align:center;margin-top:6px"><button onclick="devResetUsage()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;text-decoration:underline">［開発用］使用回数をリセット</button></p>
 
   <button class="analyze-btn" id="analyze-btn">✦ 診断する</button>
 
@@ -929,6 +931,16 @@ async function updateUsageUI() {
   }
   fill.style.width = (remaining / limit * 100) + '%';
   fill.classList.toggle('danger', remaining <= 1);
+}
+
+async function devResetUsage() {
+  const month = new Date().toISOString().slice(0, 7);
+  localStorage.removeItem('usage_' + month);
+  if (currentUser) {
+    await supa.from('user_usage').upsert({ user_id: currentUser.id, month, count: 0, updated_at: new Date().toISOString() });
+  }
+  await updateUsageUI();
+  alert('リセットしました');
 }
 
 function saveAfterImage() {
