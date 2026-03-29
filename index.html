@@ -924,6 +924,20 @@
   </div>
 </div>
 
+<!-- 解約確認モーダル -->
+<div class="confirm-overlay" id="cancel-sub-overlay">
+  <div class="confirm-card">
+    <h3>サブスクを解約する</h3>
+    <p style="margin-bottom:12px;">解約後は無料プランに戻ります。<br>ご登録のメールアドレスを入力してください。</p>
+    <input type="email" id="cancel-email-input" placeholder="メールアドレス" class="auth-input" style="margin-bottom:16px;">
+    <p id="cancel-email-error" style="color:var(--red);font-size:12px;min-height:16px;margin-bottom:8px;"></p>
+    <div class="confirm-btns">
+      <button class="btn-cancel" id="cancel-sub-cancel">キャンセル</button>
+      <button class="btn-confirm" id="cancel-sub-ok" style="background:var(--red);">解約する</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const PARAM_INFO = {
   '露出': {
@@ -1081,15 +1095,26 @@ async function updateUsageUI() {
   }
 }
 
-async function cancelSubscription() {
+function cancelSubscription() {
   if (!currentUser) return;
-  const input = prompt('解約するにはご登録のメールアドレスを入力してください：');
-  if (!input) return;
-  if (input.trim() !== currentUser.email) {
-    alert('メールアドレスが一致しません。');
-    return;
-  }
-  if (!confirm('本当に解約しますか？\n解約後は無料プランに戻ります。')) return;
+  document.getElementById('cancel-email-input').value = '';
+  document.getElementById('cancel-email-error').textContent = '';
+  document.getElementById('cancel-sub-overlay').classList.add('open');
+}
+
+document.getElementById('cancel-sub-cancel').addEventListener('click', () => {
+  document.getElementById('cancel-sub-overlay').classList.remove('open');
+});
+
+document.getElementById('cancel-sub-ok').addEventListener('click', async () => {
+  const input = document.getElementById('cancel-email-input').value.trim();
+  const errEl = document.getElementById('cancel-email-error');
+  if (!input) { errEl.textContent = 'メールアドレスを入力してください'; return; }
+  if (input !== currentUser.email) { errEl.textContent = 'メールアドレスが一致しません'; return; }
+
+  const btn = document.getElementById('cancel-sub-ok');
+  btn.textContent = '処理中...';
+  btn.disabled = true;
   try {
     const res = await fetch('/api/cancel-subscription', {
       method: 'POST',
@@ -1097,17 +1122,20 @@ async function cancelSubscription() {
       body: JSON.stringify({ userId: currentUser.id }),
     });
     const data = await res.json();
+    document.getElementById('cancel-sub-overlay').classList.remove('open');
     if (data.success) {
       isSubscribed = false;
       await updateUsageUI();
-      alert('解約しました。');
     } else {
-      alert('エラー: ' + (data.error || '不明なエラー'));
+      errEl.textContent = 'エラー: ' + (data.error || '不明なエラー');
     }
   } catch (e) {
-    alert('通信エラーが発生しました');
+    errEl.textContent = '通信エラーが発生しました';
+  } finally {
+    btn.textContent = '解約する';
+    btn.disabled = false;
   }
-}
+});
 
 async function devResetUsage() {
   localStorage.removeItem('ps_usage');
