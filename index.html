@@ -934,10 +934,12 @@ async function updateUsageUI() {
 }
 
 async function devResetUsage() {
-  const month = new Date().toISOString().slice(0, 7);
-  localStorage.removeItem('usage_' + month);
+  localStorage.removeItem('ps_usage');
   if (currentUser) {
-    await supa.from('user_usage').upsert({ user_id: currentUser.id, month, count: 0, updated_at: new Date().toISOString() });
+    const { error } = await supa.from('user_usage')
+      .update({ count: 0, updated_at: new Date().toISOString() })
+      .eq('user_id', currentUser.id);
+    if (error) { alert('DBエラー: ' + error.message); return; }
   }
   await updateUsageUI();
   alert('リセットしました');
