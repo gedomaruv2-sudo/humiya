@@ -1210,7 +1210,19 @@ document.getElementById('paywall-subscribe').addEventListener('click', () => sta
 // Auth
 function updateAuthUI() {
   const btn = document.getElementById('auth-toggle-btn');
-  btn.textContent = currentUser ? 'ログアウト' : 'ログイン';
+  const emailEl = document.getElementById('auth-user-email');
+  if (currentUser) {
+    btn.textContent = 'ログアウト';
+    const name = currentUser.user_metadata?.full_name
+      || currentUser.user_metadata?.name
+      || currentUser.email?.split('@')[0]
+      || '';
+    emailEl.textContent = name;
+    emailEl.style.display = name ? 'inline' : 'none';
+  } else {
+    btn.textContent = 'ログイン';
+    emailEl.style.display = 'none';
+  }
   document.getElementById('history-btn').style.display = 'inline-block'; // DEV: always visible
 }
 
@@ -1223,9 +1235,9 @@ async function saveHistory(data) {
 
   const diagId = crypto.randomUUID();
 
-  // dev用：小サムネイルをlocalStorageに保存
+  // dev用：大きめサムネイルをlocalStorageに保存
   if (isDevUser()) {
-    const thumbDataUrl = await compressImage(previewImg.src, 200, 0.7);
+    const thumbDataUrl = await compressImage(previewImg.src, 800, 0.9);
     const item = { id: diagId, user_id: currentUser.id, created_at: new Date().toISOString(), style: currentStyle, scene: data.scene, params: data.params, thumbnail: thumbDataUrl.split(',')[1] };
     const local = JSON.parse(localStorage.getItem('dev_history') || '[]');
     local.unshift(item);
@@ -1246,8 +1258,8 @@ async function saveHistory(data) {
     image_url = urlData.publicUrl;
   }
 
-  // サムネイル（リスト表示用・小さめ）
-  const thumbDataUrl = await compressImage(previewImg.src, 200, 0.7);
+  // サムネイル（リスト表示用）
+  const thumbDataUrl = await compressImage(previewImg.src, 300, 0.8);
   const thumbnail = thumbDataUrl.split(',')[1];
 
   await supa.from('diagnosis_history').insert({
