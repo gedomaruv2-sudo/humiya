@@ -1140,7 +1140,9 @@ document.getElementById('cancel-sub-ok').addEventListener('click', async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: currentUser.id }),
     });
-    const data = await res.json();
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = { error: `サーバーエラー (${res.status})` }; }
     if (data.success) {
       document.getElementById('cancel-sub-overlay').classList.remove('open');
       isSubscribed = false;
@@ -1149,7 +1151,7 @@ document.getElementById('cancel-sub-ok').addEventListener('click', async () => {
       errEl.textContent = 'エラー: ' + (data.error || '不明なエラー');
     }
   } catch (e) {
-    errEl.textContent = 'エラー: ' + (e.message || '通信エラーが発生しました');
+    errEl.textContent = 'エラー: ' + (e.message || '通信エラー');
   } finally {
     btn.textContent = '解約する';
     btn.disabled = false;
