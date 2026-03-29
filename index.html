@@ -680,9 +680,38 @@
       </div>
 
     </div>
-    <div style="margin-top:20px;padding:12px 16px;background:var(--accent-dim);border:1px solid rgba(212,165,90,0.25);border-radius:12px;text-align:center;">
-      <p style="font-size:12px;color:var(--accent);font-weight:500;margin-bottom:4px;">💡 ヒント</p>
-      <p style="font-size:12px;color:var(--muted);line-height:1.7;">診断結果の「露出」「彩度」などの<br>用語をタップすると、初心者向けの<br>わかりやすい解説が読めます</p>
+    <div style="margin-top:20px;padding:16px;background:var(--accent-dim);border:1px solid rgba(212,165,90,0.25);border-radius:12px;text-align:center;">
+      <p style="font-size:12px;color:var(--accent);font-weight:500;margin-bottom:12px;">💡 ヒント — 用語をタップすると解説が見られます</p>
+      <!-- イラスト -->
+      <svg viewBox="0 0 300 130" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:300px;margin-bottom:10px;">
+        <!-- パラメーターカード -->
+        <rect x="10" y="50" width="110" height="36" rx="8" fill="#1e1e1e" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+        <text x="22" y="72" font-size="13" fill="#f0ece4" font-family="sans-serif" font-weight="500">露出</text>
+        <!-- 解説バッジ -->
+        <rect x="60" y="60" width="30" height="16" rx="4" fill="rgba(212,165,90,0.2)" stroke="rgba(212,165,90,0.5)" stroke-width="1"/>
+        <text x="75" y="72" font-size="9" fill="#d4a55a" font-family="sans-serif" text-anchor="middle">解説</text>
+        <!-- 値 -->
+        <text x="108" y="72" font-size="13" fill="#5abf8e" font-family="sans-serif" text-anchor="end">+35</text>
+        <!-- 指アイコン -->
+        <text x="72" y="102" font-size="20" font-family="sans-serif" text-anchor="middle">👆</text>
+        <!-- 矢印 -->
+        <path d="M130 68 L158 68" stroke="rgba(212,165,90,0.6)" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+        <defs>
+          <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="rgba(212,165,90,0.6)"/>
+          </marker>
+        </defs>
+        <!-- 解説ポップアップ -->
+        <rect x="160" y="14" width="128" height="82" rx="10" fill="#1a1a1a" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+        <text x="176" y="34" font-size="11" fill="#d4a55a" font-family="sans-serif" font-weight="600">露出とは？</text>
+        <text x="176" y="50" font-size="9.5" fill="#7a7670" font-family="sans-serif">写真全体の明るさを</text>
+        <text x="176" y="63" font-size="9.5" fill="#7a7670" font-family="sans-serif">調整します。プラスで</text>
+        <text x="176" y="76" font-size="9.5" fill="#7a7670" font-family="sans-serif">明るく、マイナスで暗く。</text>
+        <!-- ポップアップの三角 -->
+        <polygon points="160,62 168,56 168,68" fill="#1a1a1a" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+        <polygon points="162,62 168,57 168,67" fill="#1a1a1a"/>
+      </svg>
+      <p style="font-size:11px;color:var(--muted);line-height:1.6;">「露出」「彩度」などの用語をタップすると<br>このような解説がポップアップで表示されます</p>
     </div>
     <button class="howto-close" id="howto-close">さっそく試す →</button>
   </div>
