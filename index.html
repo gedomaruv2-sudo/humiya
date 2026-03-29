@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhotoSense — 写真編集アドバイザー</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --card: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18);
+    --text: #f0ece4;
+    --muted: #7a7670;
+    --accent: #d4a55a;
+    --accent-dim: rgba(212,165,90,0.12);
+    --green: #5abf8e;
+    --red: #e06060;
+    --blue: #6eaad4;
+    --purple: #a88beb;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 32px 20px 60px;
+  }
+
+  header { text-align: center; margin-bottom: 40px; }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 5vw, 42px);
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  header h1 span { color: var(--accent); font-style: italic; }
+  header p { margin-top: 8px; color: var(--muted); font-size: 14px; font-weight: 300; letter-spacing: 0.5px; }
+
+  .container { max-width: 760px; margin: 0 auto; }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border-hover);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: var(--surface);
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-dim); }
+  .upload-icon { width: 52px; height: 52px; margin: 0 auto 16px; opacity: 0.4; }
+  .upload-zone h2 { font-size: 16px; font-weight: 400; color: var(--text); margin-bottom: 6px; }
+  .upload-zone p { font-size: 13px; color: var(--muted); }
+  #file-input { display: none; }
+
+  .preview-wrap {
+    display: none;
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .preview-wrap img { width: 100%; max-height: 420px; object-fit: contain; display: block; }
+  .preview-overlay { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; }
+
+  .btn-sm {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-hover);
+    background: rgba(13,13,13,0.8);
+    color: var(--text);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s;
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+  .analyze-btn {
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #0d0d0d;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: none;
+  }
+  .analyze-btn:hover { opacity: 0.88; }
+  .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Style selector */
+  .style-selector {
+    display: none;
+    margin-bottom: 12px;
+  }
+  .style-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+  .style-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .style-btn {
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .style-btn:hover { border-color: var(--border-hover); color: var(--text); }
+  .style-btn.active { border-color: var(--accent); color: var(--text); background: var(--accent-dim); }
+
+  .loading { display: none; text-align: center; padding: 40px; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--muted); font-size: 14px; }
+
+  .results { display: none; margin-top: 24px; }
+
+  .scene-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+  }
+  .scene-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); font-weight: 500; margin-bottom: 8px; }
+  .scene-text { font-size: 15px; line-height: 1.65; color: var(--text); font-weight: 300; }
+
+  .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 500; margin-bottom: 14px; }
+
+  .params-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+  .param-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: grid;
+    grid-template-columns: 140px 1fr 60px;
+    align-items: center;
+    gap: 16px;
+    transition: border-color 0.2s;
+  }
+  .param-card:hover { border-color: var(--border-hover); }
+
+  .param-name-wrap { cursor: pointer; }
+  .param-name-wrap:hover .param-name { color: var(--accent); }
+  .param-name { font-size: 14px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 5px; transition: color 0.2s; }
+  .param-name::after { content: '解説'; font-size: 9px; color: var(--accent); border: 1px solid rgba(212,165,90,0.5); border-radius: 4px; padding: 1px 5px; flex-shrink: 0; font-weight: 400; opacity: 0; transition: opacity 0.2s; }
+  .param-name-wrap:hover .param-name::after { opacity: 1; }
+  .param-jp { font-size: 11px; color: var(--muted); margin-top: 2px; font-weight: 300; }
+
+  .bar-wrap { position: relative; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: visible; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+  .bar-center-line { position: absolute; left: 50%; top: -4px; width: 1px; height: 12px; background: rgba(255,255,255,0.2); }
+  .param-value { text-align: right; font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .value-pos { color: var(--green); }
+  .value-neg { color: var(--red); }
+  .value-zero { color: var(--muted); }
+
+  /* Tooltip popup */
+  .tooltip-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    align-items: flex-end;
+    justify-content: center;
+    padding: 20px;
+  }
+  .tooltip-overlay.open { display: flex; }
+  .tooltip-card {
+    background: #222;
+    border: 1px solid var(--border-hover);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .tooltip-name { font-size: 20px; font-weight: 500; margin-bottom: 4px; color: var(--text); }
+  .tooltip-en { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .tooltip-desc { font-size: 15px; line-height: 1.7; color: var(--text); font-weight: 300; }
+  .tooltip-tip { margin-top: 12px; font-size: 13px; color: var(--accent); line-height: 1.6; }
+  .tooltip-close { display: block; width: 100%; margin-top: 20px; padding: 12px; border-radius: 10px; border: 1px solid var(--border-hover); background: transparent; color: var(--muted); font-size: 14px; font-family: inherit; cursor: pointer; }
+  .tooltip-close:hover { color: var(--text); }
+
+  /* Premium before/after */
+  .premium-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .premium-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .premium-badge {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    color: var(--accent);
+    border: 1px solid rgba(212,165,90,0.4);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .ba-grid { display: flex; }
+  .ba-item { position: relative; flex: 1; min-width: 0; }
+  .ba-item img { width: 100%; height: 220px; object-fit: cover; display: block; }
+  .ba-label {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    background: rgba(0,0,0,0.7);
+    color: var(--text);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .ba-divider { width: 1px; background: var(--border); }
+  .lock-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(13,13,13,0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px;
+  }
+  .lock-icon { font-size: 20px; opacity: 0.6; }
+  .lock-overlay p { font-size: 12px; color: var(--muted); text-align: center; line-height: 1.5; }
+  .upgrade-btn {
+    margin-top: 6px;
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-hover);
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .upgrade-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .tips-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 14px 14px 0;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+  }
+  .tip-item { display: flex; gap: 10px; margin-bottom: 10px; font-size: 14px; line-height: 1.6; font-weight: 300; }
+  .tip-item:last-child { margin-bottom: 0; }
+  .tip-bullet { color: var(--accent); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  .reset-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-hover);
+    background: transparent;
+    color: var(--muted);
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .reset-btn:hover { color: var(--text); border-color: var(--text); }
+
+  .error-msg {
+    display: none;
+    background: rgba(224,96,96,0.1);
+    border: 1px solid rgba(224,96,96,0.3);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--red);
+    font-size: 14px;
+    margin-top: 12px;
+  }
+
+  /* Confirm dialog */
+  .confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-card {
+    background: #222;
+    border: 1px solid var(--border-hover);
+    border-radius: 20px;
+    padding: 28px 24px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  .confirm-card h3 { font-size: 18px; font-weight: 500; margin-bottom: 10px; }
+  .confirm-card p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+  .confirm-btns { display: flex; gap: 10px; }
+  .confirm-btns button { flex: 1; padding: 12px; border-radius: 10px; font-size: 14px; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+  .btn-cancel { background: transparent; border: 1px solid var(--border-hover); color: var(--muted); }
+  .btn-cancel:hover { color: var(--text); }
+  .btn-confirm { background: var(--accent); border: none; color: #0d0d0d; font-weight: 500; }
+  .btn-confirm:hover { opacity: 0.88; }
+
+  @media (max-width: 500px) {
+    .param-card { grid-template-columns: 1fr 60px; }
+    .bar-wrap { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Photo<span>Sense</span></h1>
+    <p>写真を診断 — iPhoneの編集値を具体的に提案します</p>
+  </header>
+
+  <div class="upload-zone" id="upload-zone">
+    <h2>写真をアップロード</h2>
+    <p>タップして選択 または ドラッグ＆ドロップ</p>
+    <input type="file" id="file-input" accept="image/*">
+  </div>
+
+  <div class="style-selector" id="style-selector">
+    <p class="style-label">どんな雰囲気にしたい？</p>
+    <div class="style-grid">
+      <button class="style-btn active" data-style="明るくきれいに">☀️<br>明るく<br>きれいに</button>
+      <button class="style-btn" data-style="そのまま自然に">🌿<br>そのまま<br>自然に</button>
+      <button class="style-btn" data-style="映画みたいにかっこよく">🎬<br>映画みたいに<br>かっこよく</button>
+      <button class="style-btn" data-style="ふんわり柔らかく">🌸<br>ふんわり<br>柔らかく</button>
+      <button class="style-btn" data-style="レトロ・フィルム風">📷<br>レトロ・<br>フィルム風</button>
+      <button class="style-btn" data-style="SNS映えする感じ">✨<br>SNS映え<br>する感じ</button>
+    </div>
+  </div>
+
+  <button class="analyze-btn" id="analyze-btn">✦ 診断する</button>
+
+  <div class="preview-wrap" id="preview-wrap">
+    <img id="preview-img" src="" alt="preview">
+    <div class="preview-overlay">
+      <button class="btn-sm" id="change-btn">変更</button>
+    </div>
+  </div>
+  <div class="error-msg" id="error-msg"></div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>写真を解析中...</p>
+  </div>
+
+  <div class="results" id="results">
+    <div class="scene-summary" id="scene-summary"></div>
+
+    <!-- Premium before/after -->
+    <div class="premium-section" id="premium-section">
+      <div class="premium-header">
+        <p class="section-title" style="margin:0">調整後のプレビュー</p>
+        <span class="premium-badge">PREMIUM</span>
+      </div>
+      <div class="ba-grid">
+        <div class="ba-item">
+          <img id="ba-before" src="" alt="before">
+          <span class="ba-label">BEFORE</span>
+        </div>
+        <div class="ba-divider"></div>
+        <div class="ba-item">
+          <img id="ba-after" src="" alt="after">
+          <span class="ba-label">AFTER</span>
+          <!-- DEV: lock-overlay hidden for preview. Re-enable for production -->
+          <div class="lock-overlay" style="display:none">
+            <div class="lock-icon">🔒</div>
+            <p>調整後の仕上がりを確認</p>
+            <button class="upgrade-btn">この1枚を見る — ¥120</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-title">iPhoneの編集パラメーター<br><span style="font-size:10px;color:var(--muted);text-transform:none;letter-spacing:0">項目名をタップすると説明が見られます</span></p>
+    <div class="params-grid" id="params-grid"></div>
+
+    <p class="section-title">編集のポイント ＆ 学習メモ</p>
+    <div class="tips-section" id="tips-section"></div>
+
+    <button class="reset-btn" id="reset-btn">別の写真を試す</button>
+  </div>
+
+</div>
+
+<!-- Tooltip overlay -->
+<div class="tooltip-overlay" id="tooltip-overlay">
+  <div class="tooltip-card">
+    <div class="tooltip-name" id="tooltip-name"></div>
+    <div class="tooltip-en" id="tooltip-en"></div>
+    <div class="tooltip-desc" id="tooltip-desc"></div>
+    <div class="tooltip-tip" id="tooltip-tip"></div>
+    <button class="tooltip-close" id="tooltip-close">閉じる</button>
+  </div>
+</div>
+
+<!-- Confirm overlay -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-card">
+    <h3>別の写真を試しますか？</h3>
+    <p>現在の診断結果は消えます。<br>続けてよろしいですか？</p>
+    <div class="confirm-btns">
+      <button class="btn-cancel" id="confirm-cancel">キャンセル</button>
+      <button class="btn-confirm" id="confirm-ok">試す</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PARAM_INFO = {
+  '露出': {
+    desc: '写真全体の明るさを調整します。プラスにすると全体が明るくなり、マイナスにすると暗くなります。',
+    tip: '💡 撮影時に暗すぎた写真はまずここを上げてみましょう。ただし上げすぎると白飛びします。'
+  },
+  'ブリリアンス': {
+    desc: '暗い部分を自然に明るくしながら、明るい部分は飛ばさないようにバランスを整えます。iPhoneらしい仕上がりにする万能パラメーターです。',
+    tip: '💡 迷ったらまずブリリアンスを少し上げると写真がパッと明るくきれいになります。'
+  },
+  'ハイライト': {
+    desc: '写真の中で一番明るい部分（空・窓・光の反射など）だけを調整します。マイナスにすると白飛びが抑えられます。',
+    tip: '💡 空が白く飛んでしまっているときはマイナスにすると雲や青空が戻ってきます。'
+  },
+  'シャドウ': {
+    desc: '写真の暗い部分（影・日陰・暗い室内）だけを明るくします。逆光で人物が暗くなった写真に効果的です。',
+    tip: '💡 「逆光で顔が暗い」「影の中の細部が見えない」ときはシャドウをプラスにしてみましょう。'
+  },
+  'コントラスト': {
+    desc: '明るい部分はより明るく、暗い部分はより暗くする調整です。上げると力強くメリハリのある印象に、下げると柔らかく穏やかな印象になります。',
+    tip: '💡 ポートレートや食べ物写真は少し上げると立体感が出ます。上げすぎると不自然になるので注意。'
+  },
+  '明るさ': {
+    desc: '中間の明るさ（ミッドトーン）を中心に明るさを調整します。露出より穏やかな変化で、全体的に均一に明るさを変えたいときに使います。',
+    tip: '💡 露出で大まかに調整した後、明るさで微調整するのが定番の手順です。'
+  },
+  'ブラックポイント': {
+    desc: '写真の中で一番暗い黒の締まり具合を調整します。上げると全体がフラットでマット（艶消し）な雰囲気に、下げると黒が引き締まってメリハリが出ます。',
+    tip: '💡 フィルム風のおしゃれな加工をしたいときは少し上げてみましょう。'
+  },
+  '彩度': {
+    desc: '写真に含まれるすべての色の鮮やかさを調整します。上げると色が派手に、下げると落ち着いた色合いになります。0にするとモノクロ（白黒）になります。',
+    tip: '💡 上げすぎると肌の色が不自然になりやすいので、「自然な彩度」と使い分けるのがおすすめです。'
+  },
+  '自然な彩度': {
+    desc: 'すでに鮮やかな色はそのままに、色が薄い部分だけを鮮やかにします。彩度よりも自然な仕上がりになりやすいです。',
+    tip: '💡 人物が入った写真で彩度を上げると肌が不自然になりやすいですが、自然な彩度なら肌の色を保ちながら背景の色を引き立てられます。'
+  },
+  '暖かみ': {
+    desc: '写真の色の温度を調整します。プラスにすると夕焼けのようなオレンジ・黄色がかった暖かい雰囲気に、マイナスにすると朝の光や冬のような青みがかった涼しい雰囲気になります。',
+    tip: '💡 カフェや部屋の電球の光で撮ると黄色くなりすぎることがあります。そのときはマイナスにすると自然な色になります。'
+  },
+  '色調': {
+    desc: '写真に緑またはピンクの色みを足します。蛍光灯や特殊な光源のせいで写真が緑っぽくなった（色かぶり）ときの補正に使います。',
+    tip: '💡 コンビニや学校など蛍光灯の下で撮った写真が緑っぽいときはプラス（ピンク寄り）にしてみましょう。'
+  },
+  'シャープネス': {
+    desc: '写真の輪郭をくっきりさせます。数値が高いほど細かいディテールが際立ちます。ただし上げすぎると不自然なザラザラ感が出ます。',
+    tip: '💡 風景・建物・食べ物は少し上げると◎。人物（特に肌）は上げすぎないのがコツです。'
+  },
+  'ノイズ除去': {
+    desc: '暗い場所で撮った写真に出るザラザラ・粒粒したノイズを滑らかにします。夜景や室内撮影に効果的です。',
+    tip: '💡 夜景やライブ写真がざらざらして見えるときに上げましょう。上げすぎると塗り絵のように細部がなくなります。'
+  },
+  'ビネット': {
+    desc: '写真の四隅を暗くして、中央に自然と視線が集まるようにする効果です。マイナスのみで動作します（プラスはありません）。',
+    tip: '💡 ポートレートや料理写真に少しかけると、主役が引き立ちます。やりすぎると暗くなりすぎるので－20〜－30程度が使いやすいです。'
+  },
+};
+
+const uploadZone = document.getElementById('upload-zone');
+const fileInput = document.getElementById('file-input');
+const previewWrap = document.getElementById('preview-wrap');
+const previewImg = document.getElementById('preview-img');
+const analyzeBtn = document.getElementById('analyze-btn');
+const changeBtn = document.getElementById('change-btn');
+const loading = document.getElementById('loading');
+const results = document.getElementById('results');
+const errorMsg = document.getElementById('error-msg');
+const resetBtn = document.getElementById('reset-btn');
+const tooltipOverlay = document.getElementById('tooltip-overlay');
+const tooltipClose = document.getElementById('tooltip-close');
+const confirmOverlay = document.getElementById('confirm-overlay');
+const confirmCancel = document.getElementById('confirm-cancel');
+const confirmOk = document.getElementById('confirm-ok');
+
+let currentBase64 = null;
+let currentMime = null;
+let currentStyle = '明るくきれいに';
+
+document.querySelectorAll('.style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentStyle = btn.dataset.style;
+  });
+});
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadFile(f);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+changeBtn.addEventListener('click', () => fileInput.click());
+analyzeBtn.addEventListener('click', analyze);
+
+resetBtn.addEventListener('click', () => {
+  confirmOverlay.classList.add('open');
+});
+confirmCancel.addEventListener('click', () => {
+  confirmOverlay.classList.remove('open');
+});
+confirmOk.addEventListener('click', () => {
+  confirmOverlay.classList.remove('open');
+  doReset();
+});
+
+tooltipClose.addEventListener('click', () => tooltipOverlay.classList.remove('open'));
+tooltipOverlay.addEventListener('click', e => { if (e.target === tooltipOverlay) tooltipOverlay.classList.remove('open'); });
+confirmOverlay.addEventListener('click', e => { if (e.target === confirmOverlay) confirmOverlay.classList.remove('open'); });
+
+function doReset() {
+  uploadZone.style.display = 'block';
+  document.getElementById('style-selector').style.display = 'none';
+  previewWrap.style.display = 'none';
+  analyzeBtn.style.display = 'none';
+  results.style.display = 'none';
+  errorMsg.style.display = 'none';
+  currentBase64 = null;
+  fileInput.value = '';
+}
+
+function showTooltip(name, en) {
+  const info = PARAM_INFO[name];
+  if (!info) return;
+  document.getElementById('tooltip-name').textContent = name;
+  document.getElementById('tooltip-en').textContent = en;
+  document.getElementById('tooltip-desc').textContent = info.desc;
+  document.getElementById('tooltip-tip').textContent = info.tip;
+  tooltipOverlay.classList.add('open');
+}
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const dataUrl = e.target.result;
+    currentMime = file.type || 'image/jpeg';
+    currentBase64 = dataUrl.split(',')[1];
+    previewImg.src = dataUrl;
+    uploadZone.style.display = 'none';
+    document.getElementById('style-selector').style.display = 'block';
+    previewWrap.style.display = 'block';
+    analyzeBtn.style.display = 'block';
+    results.style.display = 'none';
+    errorMsg.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function applyEditsCanvas(sourceImg, params) {
+  return new Promise(resolve => {
+    const get = name => { const p = params.find(p => p.name === name); return p ? p.value : 0; };
+
+    const maxDim = 900;
+    const nw = sourceImg.naturalWidth || 800;
+    const nh = sourceImg.naturalHeight || 600;
+    const scale = Math.min(1, maxDim / Math.max(nw, nh));
+    const w = Math.round(nw * scale);
+    const h = Math.round(nh * scale);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(sourceImg, 0, 0, w, h);
+
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const d = imageData.data;
+
+    const exposure   = get('露出');
+    const brilliance = get('ブリリアンス');
+    const highlights = get('ハイライト');
+    const shadows    = get('シャドウ');
+    const contrast   = get('コントラスト');
+    const brightness = get('明るさ');
+    const blackPoint = get('ブラックポイント');
+    const saturation = get('彩度');
+    const vibrance   = get('自然な彩度');
+    const warmth     = get('暖かみ');
+    const tint       = get('色調');
+    const sharpness  = get('シャープネス');
+    const vignette   = get('ビネット');
+
+    const expFactor  = Math.pow(2, exposure * 1.5 / 100);
+    const cFactor    = 1 + contrast / 200;
+    const warmR = warmth * 0.15 / 100;
+    const warmG = warmth * 0.03 / 100;
+    const warmB = -warmth * 0.15 / 100;
+    const tintG = -tint * 0.08 / 100;
+
+    for (let i = 0; i < d.length; i += 4) {
+      let r = d[i] / 255, g = d[i+1] / 255, b = d[i+2] / 255;
+
+      // Exposure
+      r *= expFactor; g *= expFactor; b *= expFactor;
+
+      // Brilliance: lift shadows + recover highlights
+      if (brilliance !== 0) {
+        const lum = 0.299*r + 0.587*g + 0.114*b;
+        const br = brilliance / 100;
+        const lift = br * 0.35 * (1-lum)*(1-lum);
+        const rec  = -br * 0.12 * lum*lum;
+        r += lift+rec; g += lift+rec; b += lift+rec;
+      }
+
+      // Highlights (affects bright areas)
+      if (highlights !== 0) {
+        const hl = highlights / 100 * 0.4;
+        r += hl * r * (1-r); g += hl * g * (1-g); b += hl * b * (1-b);
+      }
+
+      // Shadows (affects dark areas)
+      if (shadows !== 0) {
+        const sh = shadows / 100 * 0.5;
+        r += sh*(1-r)*(1-r); g += sh*(1-g)*(1-g); b += sh*(1-b)*(1-b);
+      }
+
+      // Contrast S-curve
+      r = (r-0.5)*cFactor+0.5; g = (g-0.5)*cFactor+0.5; b = (b-0.5)*cFactor+0.5;
+
+      // Brightness (midtone bell)
+      if (brightness !== 0) {
+        const br = brightness / 100 * 0.3;
+        r += br*(1-Math.abs(2*r-1)); g += br*(1-Math.abs(2*g-1)); b += br*(1-Math.abs(2*b-1));
+      }
+
+      // Black Point
+      if (blackPoint !== 0) {
+        const bp = blackPoint / 100;
+        if (bp > 0) {
+          r = r*(1-bp*0.2)+bp*0.2; g = g*(1-bp*0.2)+bp*0.2; b = b*(1-bp*0.2)+bp*0.2;
+        } else {
+          const gb = 1 - bp*0.25;
+          r = Math.pow(Math.max(0,r),gb); g = Math.pow(Math.max(0,g),gb); b = Math.pow(Math.max(0,b),gb);
+        }
+      }
+
+      r = Math.max(0,Math.min(1,r)); g = Math.max(0,Math.min(1,g)); b = Math.max(0,Math.min(1,b));
+
+      // Warmth & Tint
+      r += warmR; g += warmG + tintG; b += warmB;
+
+      // Saturation
+      if (saturation !== 0) {
+        const lum = 0.299*r+0.587*g+0.114*b, s = 1+saturation/100;
+        r = lum+(r-lum)*s; g = lum+(g-lum)*s; b = lum+(b-lum)*s;
+      }
+
+      // Vibrance (selective saturation)
+      if (vibrance !== 0) {
+        const lum = 0.299*r+0.587*g+0.114*b;
+        const curSat = (Math.max(r,g,b)-Math.min(r,g,b)) / (Math.max(r,g,b)||1);
+        const vf = vibrance/100*(1-curSat);
+        r = lum+(r-lum)*(1+vf); g = lum+(g-lum)*(1+vf); b = lum+(b-lum)*(1+vf);
+      }
+
+      r = Math.max(0,Math.min(1,r)); g = Math.max(0,Math.min(1,g)); b = Math.max(0,Math.min(1,b));
+      d[i] = r*255+0.5|0; d[i+1] = g*255+0.5|0; d[i+2] = b*255+0.5|0;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    // Sharpness (unsharp mask)
+    if (sharpness > 0) {
+      const sd = ctx.getImageData(0, 0, w, h);
+      const s = sd.data, orig = new Uint8ClampedArray(s);
+      const amt = sharpness / 100 * 1.2;
+      for (let y = 1; y < h-1; y++) {
+        for (let x = 1; x < w-1; x++) {
+          const idx = (y*w+x)*4;
+          for (let c = 0; c < 3; c++) {
+            const ctr = orig[idx+c];
+            const nb = orig[((y-1)*w+x)*4+c]+orig[((y+1)*w+x)*4+c]+orig[(y*w+x-1)*4+c]+orig[(y*w+x+1)*4+c];
+            s[idx+c] = Math.max(0,Math.min(255, ctr+amt*(4*ctr-nb)|0));
+          }
+        }
+      }
+      ctx.putImageData(sd, 0, 0);
+    }
+
+    // Vignette
+    if (vignette < 0) {
+      const strength = Math.abs(vignette/100)*0.8;
+      const cx=w/2, cy=h/2, r2=Math.sqrt(cx*cx+cy*cy);
+      const grad = ctx.createRadialGradient(cx,cy,r2*0.25,cx,cy,r2);
+      grad.addColorStop(0,'rgba(0,0,0,0)');
+      grad.addColorStop(1,`rgba(0,0,0,${strength})`);
+      ctx.fillStyle=grad; ctx.fillRect(0,0,w,h);
+    }
+
+    resolve(canvas.toDataURL('image/jpeg', 0.92));
+  });
+}
+
+async function analyze() {
+  analyzeBtn.disabled = true;
+  analyzeBtn.textContent = '解析中...';
+  loading.style.display = 'block';
+  results.style.display = 'none';
+  errorMsg.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: currentBase64, mimeType: currentMime, style: currentStyle })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderResults(data);
+  } catch (err) {
+    errorMsg.textContent = 'エラー: ' + err.message;
+    errorMsg.style.display = 'block';
+  } finally {
+    analyzeBtn.disabled = false;
+    analyzeBtn.textContent = '✦ 再診断する';
+    loading.style.display = 'none';
+  }
+}
+
+function renderResults(data) {
+  document.getElementById('scene-summary').innerHTML = `
+    <div class="scene-label">写真の分析</div>
+    <div class="scene-text">${escHtml(data.scene)}</div>
+  `;
+
+  // Before/after preview
+  const src = previewImg.src;
+  document.getElementById('ba-before').src = src;
+  const afterImg = document.getElementById('ba-after');
+  afterImg.src = src;
+  afterImg.style.filter = '';
+  applyEditsCanvas(previewImg, data.params || []).then(url => { afterImg.src = url; });
+
+  const grid = document.getElementById('params-grid');
+  grid.innerHTML = '';
+  (data.params || []).forEach(p => {
+    const v = Math.round(p.value);
+    const isPos = v > 0;
+    const isNeg = v < 0;
+    const min = ['シャープネス','ノイズ除去'].includes(p.name) ? 0 : -100;
+    const max = p.name === 'ビネット' ? 0 : 100;
+
+    let barHTML = '';
+    if (min === -100) {
+      const pct = ((v + 100) / 200) * 100;
+      const width = Math.abs(pct - 50);
+      const fillColor = isPos ? 'var(--green)' : isNeg ? 'var(--red)' : 'var(--muted)';
+      barHTML = `<div class="bar-wrap">
+        <div class="bar-center-line"></div>
+        <div class="bar-fill" style="position:absolute;left:${isNeg ? pct : 50}%;width:${width}%;background:${fillColor};"></div>
+      </div>`;
+    } else {
+      const pct = (v / max) * 100;
+      barHTML = `<div class="bar-wrap" style="background:rgba(255,255,255,0.06);">
+        <div class="bar-fill" style="width:${pct}%;background:var(--blue);"></div>
+      </div>`;
+    }
+
+    const valClass = isPos ? 'value-pos' : isNeg ? 'value-neg' : 'value-zero';
+    const valStr = isPos ? '+' + v : String(v);
+
+    const card = document.createElement('div');
+    card.className = 'param-card';
+    card.innerHTML = `
+      <div class="param-name-wrap">
+        <div class="param-name">${escHtml(p.name)}</div>
+        <div class="param-jp">${escHtml(p.en)}</div>
+      </div>
+      ${barHTML}
+      <div class="param-value ${valClass}">${valStr}</div>
+    `;
+    card.querySelector('.param-name-wrap').addEventListener('click', () => showTooltip(p.name, p.en));
+    grid.appendChild(card);
+  });
+
+  const tips = document.getElementById('tips-section');
+  tips.innerHTML = (data.tips || []).map(t =>
+    `<div class="tip-item"><span class="tip-bullet">◆</span><span>${escHtml(t)}</span></div>`
+  ).join('');
+
+  results.style.display = 'block';
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
