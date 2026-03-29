@@ -1064,10 +1064,7 @@ async function updateUsageUI() {
   const label = document.getElementById('usage-label');
   bar.style.display = 'flex';
   if (isSubscribed) {
-    const email = currentUser.email || '';
-    const [local, domain] = email.split('@');
-    const maskedEmail = local.length <= 2 ? local[0] + '***@' + domain : local.slice(0, 2) + '***@' + domain;
-    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン &nbsp;<button onclick="cancelSubscription()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">解約する</button></span><br><span style="font-size:10px;color:var(--muted);">登録メール：${maskedEmail}</span>`;
+    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン &nbsp;<button onclick="cancelSubscription()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">解約する</button></span>`;
     fill.style.width = '100%';
     fill.classList.remove('danger');
   } else if (currentUser) {
@@ -1083,7 +1080,7 @@ async function updateUsageUI() {
 
 async function cancelSubscription() {
   if (!currentUser) return;
-  const input = prompt('解約するにはメールアドレスを入力してください：');
+  const input = prompt('解約するにはご登録のメールアドレスを入力してください：');
   if (!input) return;
   if (input.trim() !== currentUser.email) {
     alert('メールアドレスが一致しません。');
