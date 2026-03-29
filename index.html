@@ -1103,17 +1103,25 @@ function updateAuthUI() {
 }
 
 // History
+const DEV_USER_ID = '00000000-0000-0000-0000-000000000001';
+function isDevUser() { return currentUser && currentUser.id === DEV_USER_ID; }
+
 async function saveHistory(data) {
   if (!currentUser) return;
-  await supa.from('diagnosis_history').insert({
-    user_id: currentUser.id,
-    style: currentStyle,
-    scene: data.scene,
-    params: data.params
-  });
+  const item = { id: crypto.randomUUID(), user_id: currentUser.id, created_at: new Date().toISOString(), style: currentStyle, scene: data.scene, params: data.params };
+  if (isDevUser()) {
+    const local = JSON.parse(localStorage.getItem('dev_history') || '[]');
+    local.unshift(item);
+    localStorage.setItem('dev_history', JSON.stringify(local.slice(0, 20)));
+    return;
+  }
+  await supa.from('diagnosis_history').insert(item);
 }
 
 async function loadHistory() {
+  if (isDevUser()) {
+    return JSON.parse(localStorage.getItem('dev_history') || '[]');
+  }
   const { data, error } = await supa
     .from('diagnosis_history')
     .select('*')
