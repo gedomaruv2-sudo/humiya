@@ -1287,13 +1287,16 @@ async function loadHistory() {
   return error ? [] : (data || []);
 }
 
+const FREE_HISTORY_LIMIT = 2;
+
 function renderHistory(items) {
   const el = document.getElementById('history-list');
   if (!items.length) {
     el.innerHTML = '<p class="history-empty">まだ診断履歴がありません</p>';
     return;
   }
-  el.innerHTML = items.map((item, i) => {
+
+  let html = items.map((item, i) => {
     const date = new Date(item.created_at);
     const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
     const params = (item.params || []).slice(0, 6).map(p =>
@@ -1302,6 +1305,30 @@ function renderHistory(items) {
     const thumb = item.thumbnail
       ? `<img src="data:image/jpeg;base64,${item.thumbnail}" class="history-thumb">`
       : `<div class="history-thumb history-thumb-empty">📷</div>`;
+
+    // 3件目以降はロック
+    if (i >= FREE_HISTORY_LIMIT) {
+      return `
+        <div class="history-item" style="position:relative;overflow:hidden;cursor:default;">
+          <div style="filter:blur(3px);pointer-events:none;opacity:0.4;">
+            <div class="history-item-top">
+              <div style="display:flex;align-items:center;gap:10px">
+                ${thumb}
+                <div>
+                  <div class="history-style">${escHtml(item.style || '未選択')}</div>
+                  <div class="history-date">${dateStr}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(13,13,13,0.6);">
+            <div style="font-size:16px;">🔒</div>
+            <div style="font-size:12px;color:var(--text);font-weight:500;">スタンダードプランで見放題</div>
+            <button onclick="startCheckout('subscription')" style="background:var(--accent);color:#0d0d0d;border:none;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;">月額¥480で解放する</button>
+          </div>
+        </div>`;
+    }
+
     return `
       <div class="history-item" data-index="${i}" style="cursor:pointer">
         <div class="history-item-top">
@@ -1319,8 +1346,10 @@ function renderHistory(items) {
       </div>`;
   }).join('');
 
-  // クリックで過去の診断を表示
-  el.querySelectorAll('.history-item').forEach(el => {
+  el.innerHTML = html;
+
+  // 無料枠のみクリック可能
+  el.querySelectorAll('.history-item[data-index]').forEach(el => {
     el.addEventListener('click', () => {
       const index = parseInt(el.dataset.index);
       document.getElementById('history-overlay').classList.remove('open');
