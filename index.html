@@ -1422,6 +1422,7 @@ document.getElementById('history-btn').addEventListener('click', async () => {
   }
   document.getElementById('history-list').innerHTML = '<p class="history-empty">読み込み中...</p>';
 
+  await checkSubscription();
   const items = await loadHistory();
   _historyItems = items;
   renderHistory(items);
@@ -1728,10 +1729,12 @@ function applyEditsCanvas(sourceImg, params) {
 }
 
 async function analyze() {
-  const usage = await getUsage();
-  if (usage.count >= getFreeLimit()) {
-    showPaywall();
-    return;
+  if (!isSubscribed) {
+    const usage = await getUsage();
+    if (usage.count >= getFreeLimit()) {
+      showPaywall();
+      return;
+    }
   }
 
   analyzeBtn.disabled = true;
