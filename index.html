@@ -1104,7 +1104,15 @@ function cancelSubscription() {
   if (email) {
     const [local, domain] = email.split('@');
     const masked = local.length <= 2 ? (local[0] || '') + '***@' + (domain || '') : local.slice(0, 2) + '***@' + (domain || '');
-    hint.textContent = '登録メール：' + masked;
+    const span = document.createElement('span');
+    span.textContent = '登録メール：' + masked;
+    const fillBtn = document.createElement('button');
+    fillBtn.textContent = '入力する';
+    fillBtn.type = 'button';
+    fillBtn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:var(--accent);font-size:11px;cursor:pointer;padding:3px 8px;font-family:inherit;flex-shrink:0;';
+    fillBtn.onclick = () => { document.getElementById('cancel-email-input').value = email; };
+    hint.appendChild(span);
+    hint.appendChild(fillBtn);
   } else {
     hint.textContent = '登録メールアドレスを入力してください';
   }
