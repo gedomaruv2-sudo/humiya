@@ -164,6 +164,8 @@
   .history-params { display:flex; flex-wrap:wrap; gap:6px; }
   .history-param { font-size:11px; background:var(--card); border-radius:6px; padding:3px 8px; color:var(--text); }
   .history-param span { color:var(--accent); font-weight:500; }
+  .history-thumb { width:52px; height:52px; object-fit:cover; border-radius:8px; flex-shrink:0; }
+  .history-thumb-empty { width:52px; height:52px; border-radius:8px; background:var(--card); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
 
   /* How-to guide */
   .howto {
@@ -1108,7 +1110,18 @@ function isDevUser() { return currentUser && currentUser.id === DEV_USER_ID; }
 
 async function saveHistory(data) {
   if (!currentUser) return;
-  const item = { id: crypto.randomUUID(), user_id: currentUser.id, created_at: new Date().toISOString(), style: currentStyle, scene: data.scene, params: data.params };
+  // サムネイル生成（200px幅・低品質で軽量化）
+  const thumbDataUrl = await compressImage(previewImg.src, 200, 0.7);
+  const thumbnail = thumbDataUrl.split(',')[1];
+  const item = {
+    id: crypto.randomUUID(),
+    user_id: currentUser.id,
+    created_at: new Date().toISOString(),
+    style: currentStyle,
+    scene: data.scene,
+    params: data.params,
+    thumbnail
+  };
   if (isDevUser()) {
     const local = JSON.parse(localStorage.getItem('dev_history') || '[]');
     local.unshift(item);
@@ -1137,22 +1150,64 @@ function renderHistory(items) {
     el.innerHTML = '<p class="history-empty">まだ診断履歴がありません</p>';
     return;
   }
-  el.innerHTML = items.map(item => {
+  el.innerHTML = items.map((item, i) => {
     const date = new Date(item.created_at);
     const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
     const params = (item.params || []).slice(0, 6).map(p =>
       `<div class="history-param">${escHtml(p.name)} <span>${p.value > 0 ? '+' : ''}${p.value}</span></div>`
     ).join('');
+    const thumb = item.thumbnail
+      ? `<img src="data:image/jpeg;base64,${item.thumbnail}" class="history-thumb">`
+      : `<div class="history-thumb history-thumb-empty">📷</div>`;
     return `
-      <div class="history-item">
+      <div class="history-item" data-index="${i}" style="cursor:pointer">
         <div class="history-item-top">
-          <div class="history-style">${escHtml(item.style || '未選択')}</div>
-          <div class="history-date">${dateStr}</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            ${thumb}
+            <div>
+              <div class="history-style">${escHtml(item.style || '未選択')}</div>
+              <div class="history-date">${dateStr}</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--muted)">詳細 ›</div>
         </div>
         <div class="history-scene">${escHtml(item.scene || '')}</div>
         <div class="history-params">${params}</div>
       </div>`;
   }).join('');
+
+  // クリックで過去の診断を表示
+  el.querySelectorAll('.history-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const item = _historyItems[parseInt(el.dataset.index)];
+      document.getElementById('history-overlay').classList.remove('open');
+      showHistoryResult(item);
+    });
+  });
+}
+
+let _historyItems = [];
+
+function showHistoryResult(item) {
+  if (!item.thumbnail) return;
+  const thumbSrc = `data:image/jpeg;base64,${item.thumbnail}`;
+  const img = new Image();
+  img.onload = () => {
+    previewImg.src = thumbSrc;
+    document.getElementById('ba-before').src = thumbSrc;
+    const afterImg = document.getElementById('ba-after');
+    afterImg.src = thumbSrc;
+    applyEditsCanvas(img, item.params || []).then(url => {
+      afterImg.src = url;
+      document.getElementById('save-btn').style.display = 'block';
+    });
+    uploadZone.style.display = 'none';
+    document.getElementById('style-selector').style.display = 'none';
+    previewWrap.style.display = 'block';
+    analyzeBtn.style.display = 'none';
+    renderResults({ scene: item.scene, params: item.params, advice: item.advice || '' });
+  };
+  img.src = thumbSrc;
 }
 
 document.getElementById('history-btn').addEventListener('click', async () => {
@@ -1162,7 +1217,9 @@ document.getElementById('history-btn').addEventListener('click', async () => {
     return;
   }
   document.getElementById('history-list').innerHTML = '<p class="history-empty">読み込み中...</p>';
+
   const items = await loadHistory();
+  _historyItems = items;
   renderHistory(items);
 });
 
