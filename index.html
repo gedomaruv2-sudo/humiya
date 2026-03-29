@@ -1064,7 +1064,10 @@ async function updateUsageUI() {
   const label = document.getElementById('usage-label');
   bar.style.display = 'flex';
   if (isSubscribed) {
-    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン &nbsp;<button onclick="cancelSubscription()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">解約する</button></span><br><span style="font-size:10px;color:var(--muted);">登録メール：${currentUser.email}</span>`;
+    const email = currentUser.email || '';
+    const [local, domain] = email.split('@');
+    const maskedEmail = local.length <= 2 ? local[0] + '***@' + domain : local.slice(0, 2) + '***@' + domain;
+    label.innerHTML = `<strong style="color:var(--accent)">∞ 無制限</strong>&nbsp;<span style="color:var(--muted);font-size:11px">スタンダードプラン &nbsp;<button onclick="cancelSubscription()" style="background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;text-decoration:underline;font-family:inherit;">解約する</button></span><br><span style="font-size:10px;color:var(--muted);">登録メール：${maskedEmail}</span>`;
     fill.style.width = '100%';
     fill.classList.remove('danger');
   } else if (currentUser) {
