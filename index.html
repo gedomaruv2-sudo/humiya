@@ -1076,7 +1076,13 @@ async function updateUsageUI() {
 
 async function cancelSubscription() {
   if (!currentUser) return;
-  if (!confirm('サブスクリプションを解約しますか？\n解約後は無料プランに戻ります。')) return;
+  const input = prompt('解約するにはメールアドレスを入力してください：');
+  if (!input) return;
+  if (input.trim() !== currentUser.email) {
+    alert('メールアドレスが一致しません。');
+    return;
+  }
+  if (!confirm('本当に解約しますか？\n解約後は無料プランに戻ります。')) return;
   try {
     const res = await fetch('/api/cancel-subscription', {
       method: 'POST',
