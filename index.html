@@ -1592,6 +1592,7 @@ function loadFile(file) {
 
 function applyEditsCanvas(sourceImg, params) {
   return new Promise(resolve => {
+    const process = () => {
     const get = name => { const p = params.find(p => p.name === name); return p ? p.value : 0; };
 
     const maxDim = 1600;
@@ -1731,6 +1732,13 @@ function applyEditsCanvas(sourceImg, params) {
     }
 
     resolve(canvas.toDataURL('image/jpeg', 0.97));
+    }; // end process
+
+    if (sourceImg.complete && sourceImg.naturalWidth > 0) {
+      process();
+    } else {
+      sourceImg.onload = process;
+    }
   });
 }
 
