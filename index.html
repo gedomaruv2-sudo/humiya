@@ -680,7 +680,7 @@
   </div>
 
   <div class="usage-bar" id="usage-bar">
-    <span class="usage-label">今月の無料診断：<strong id="usage-text">残り3回</strong></span>
+    <span class="usage-label">今月の無料診断：<strong id="usage-text">確認中...</strong></span>
     <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
   </div>
 
@@ -1068,13 +1068,14 @@ function initAuth() {
   supa.auth.onAuthStateChange((_event, session) => {
     currentUser = session?.user || null;
     updateAuthUI();
-    if (currentBase64) updateUsageUI();
+    updateUsageUI();
   });
 
   // マジックリンクのURLハッシュを処理 & 既存セッション確認
   supa.auth.getSession().then(({ data: { session } }) => {
     currentUser = session?.user || null;
     updateAuthUI();
+    updateUsageUI(); // ページ読み込み時に正しい上限で表示
   });
 }
 initAuth();
