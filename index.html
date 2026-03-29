@@ -1265,11 +1265,29 @@ function showTooltip(name, en) {
   tooltipOverlay.classList.add('open');
 }
 
+function compressImage(dataUrl, maxWidth, quality) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 function loadFile(file) {
   const reader = new FileReader();
-  reader.onload = e => {
-    const dataUrl = e.target.result;
-    currentMime = file.type || 'image/jpeg';
+  reader.onload = async e => {
+    const raw = e.target.result;
+    // 圧縮：長辺1600px以下・品質0.82
+    const dataUrl = await compressImage(raw, 1600, 0.82);
+    currentMime = 'image/jpeg';
     currentBase64 = dataUrl.split(',')[1];
     previewImg.src = dataUrl;
     uploadZone.style.display = 'none';
