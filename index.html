@@ -1141,8 +1141,8 @@ document.getElementById('cancel-sub-ok').addEventListener('click', async () => {
       body: JSON.stringify({ userId: currentUser.id }),
     });
     const data = await res.json();
-    document.getElementById('cancel-sub-overlay').classList.remove('open');
     if (data.success) {
+      document.getElementById('cancel-sub-overlay').classList.remove('open');
       isSubscribed = false;
       await updateUsageUI();
     } else {
