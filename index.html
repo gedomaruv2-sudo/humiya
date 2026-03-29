@@ -475,7 +475,7 @@
   </div>
 
   <div class="usage-bar" id="usage-bar">
-    <span class="usage-label">今月の無料診断：<strong id="usage-text">残り5回</strong></span>
+    <span class="usage-label">今月の無料診断：<strong id="usage-text">残り3回</strong></span>
     <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
   </div>
 
@@ -516,7 +516,7 @@
           <div class="lock-overlay" style="display:none">
             <div class="lock-icon">🔒</div>
             <p>調整後の仕上がりを確認</p>
-            <button class="upgrade-btn">この1枚を見る — ¥120</button>
+            <button class="upgrade-btn">この1枚を見る — ¥150</button>
           </div>
         </div>
       </div>
@@ -549,8 +549,8 @@
   <div class="paywall-card">
     <div class="paywall-icon">📸</div>
     <h3>今月の無料診断を使い切りました</h3>
-    <p>無料プランは月5回まで。<br>1枚¥120で続けるか、来月まで待てます。</p>
-    <button class="paywall-btn" id="paywall-buy">この1枚を診断する — ¥120</button>
+    <p>無料プランは月3回まで。<br>1枚¥150で続けるか、月額¥480で使い放題にできます。</p>
+    <button class="paywall-btn" id="paywall-buy">この1枚を診断する — ¥150</button>
     <button class="paywall-close" id="paywall-close">来月まで待つ</button>
     <p class="paywall-reset" id="paywall-reset"></p>
   </div>
@@ -648,7 +648,7 @@ let currentBase64 = null;
 let currentMime = null;
 let currentStyle = '明るくきれいに';
 
-const FREE_LIMIT = 5;
+const FREE_LIMIT = 3;
 
 function getUsage() {
   const now = new Date();
