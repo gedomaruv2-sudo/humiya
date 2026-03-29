@@ -587,6 +587,7 @@
     <h3>今月の無料診断を使い切りました</h3>
     <p>無料プランは月3回まで。<br>1枚¥150で続けるか、月額¥480で使い放題にできます。</p>
     <button class="paywall-btn" id="paywall-buy">この1枚を診断する — ¥150</button>
+    <button class="paywall-btn" id="paywall-subscribe" style="background:#2563eb;">月額プランに登録する — ¥480/月</button>
     <button class="paywall-close" id="paywall-close">来月まで待つ</button>
     <p class="paywall-reset" id="paywall-reset"></p>
   </div>
@@ -743,8 +744,55 @@ function showPaywall() {
 }
 
 document.getElementById('paywall-close').addEventListener('click', () => document.getElementById('paywall-overlay').classList.remove('open'));
-document.getElementById('paywall-buy').addEventListener('click', () => alert('決済機能は近日公開予定です'));
 document.getElementById('paywall-overlay').addEventListener('click', e => { if (e.target === document.getElementById('paywall-overlay')) document.getElementById('paywall-overlay').classList.remove('open'); });
+
+async function startCheckout(type) {
+  const btn = type === 'subscription'
+    ? document.getElementById('paywall-subscribe')
+    : document.getElementById('paywall-buy');
+  const orig = btn.textContent;
+  btn.textContent = '処理中...';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type })
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('エラーが発生しました: ' + (data.error || '不明なエラー'));
+      btn.textContent = orig;
+      btn.disabled = false;
+    }
+  } catch (e) {
+    alert('通信エラーが発生しました');
+    btn.textContent = orig;
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('paywall-buy').addEventListener('click', () => startCheckout('single'));
+document.getElementById('paywall-subscribe').addEventListener('click', () => startCheckout('subscription'));
+
+// Handle Stripe return
+(function handlePaymentReturn() {
+  const params = new URLSearchParams(location.search);
+  const status = params.get('payment');
+  const type = params.get('type');
+  if (status === 'success') {
+    const msg = type === 'subscription'
+      ? '月額プランへの登録が完了しました！毎月10枚まで診断できます 🎉'
+      : '決済が完了しました！診断をお楽しみください 🎉';
+    setTimeout(() => alert(msg), 300);
+    // Remove query params from URL
+    history.replaceState({}, '', location.pathname);
+  } else if (status === 'cancel') {
+    history.replaceState({}, '', location.pathname);
+  }
+})();
 
 // Auth
 function updateAuthUI() {

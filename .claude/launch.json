@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "PhotoSense (vercel dev)",
+      "runtimeExecutable": "vercel",
+      "runtimeArgs": ["dev", "--cwd", "/Users/fufu/Downloads/photosense", "--yes"],
+      "port": 3000
+    }
+  ]
+}

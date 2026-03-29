@@ -1,7 +1,6 @@
 {
   "functions": {
-    "api/analyze.js": {
-      "maxDuration": 30
-    }
+    "api/analyze.js": { "maxDuration": 30 },
+    "api/create-checkout.js": { "maxDuration": 10 }
   }
 }
