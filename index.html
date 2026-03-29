@@ -680,7 +680,7 @@
   </div>
 
   <div class="usage-bar" id="usage-bar">
-    <span class="usage-label">今月の無料診断：<strong id="usage-text">確認中...</strong></span>
+    <span class="usage-label" id="usage-label">確認中...</span>
     <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
   </div>
 
@@ -920,8 +920,13 @@ async function updateUsageUI() {
   const bar = document.getElementById('usage-bar');
   const text = document.getElementById('usage-text');
   const fill = document.getElementById('usage-fill');
+  const label = document.getElementById('usage-label');
   bar.style.display = 'flex';
-  text.textContent = currentUser ? `残り${remaining}回（ログイン中）` : `残り${remaining}回`;
+  if (currentUser) {
+    label.innerHTML = `今月の無料診断：<strong style="color:var(--accent)">${remaining}回</strong> 残り`;
+  } else {
+    label.innerHTML = `無料：残り <strong style="color:var(--accent)">${remaining}回</strong> &nbsp;<span style="color:var(--muted);font-size:11px">／ ログインすると3回</span>`;
+  }
   fill.style.width = (remaining / limit * 100) + '%';
   fill.classList.toggle('danger', remaining <= 1);
 }
