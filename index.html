@@ -148,6 +148,23 @@
   .usage-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s ease; }
   .usage-fill.danger { background: var(--red); }
 
+  /* History overlay */
+  .history-overlay { display:none; position:fixed; inset:0; z-index:300; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto; }
+  .history-overlay.open { display:flex; }
+  .history-card { background:#1a1a1a; border:1px solid var(--border-hover); border-radius:20px; padding:24px; max-width:480px; width:100%; margin-top:20px; }
+  .history-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .history-header h3 { font-size:18px; font-weight:500; }
+  .history-close-btn { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:4px; }
+  .history-empty { color:var(--muted); font-size:14px; text-align:center; padding:40px 0; }
+  .history-item { border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+  .history-item-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .history-style { font-size:13px; font-weight:500; color:var(--accent); }
+  .history-date { font-size:11px; color:var(--muted); }
+  .history-scene { font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:10px; }
+  .history-params { display:flex; flex-wrap:wrap; gap:6px; }
+  .history-param { font-size:11px; background:var(--card); border-radius:6px; padding:3px 8px; color:var(--text); }
+  .history-param span { color:var(--accent); font-weight:500; }
+
   /* How-to guide */
   .howto {
     background: var(--surface);
@@ -560,6 +577,7 @@
     <p>写真をアップするだけで、iPhoneの編集値を具体的に提案します</p>
     <div class="auth-bar">
       <span class="auth-user" id="auth-user-email" style="display:none"></span>
+      <button class="auth-btn" id="history-btn" style="display:none">履歴</button>
       <button class="auth-btn" id="auth-toggle-btn">ログイン</button>
     </div>
   </header>
@@ -747,6 +765,17 @@
     <div class="tooltip-desc" id="tooltip-desc"></div>
     <div class="tooltip-tip" id="tooltip-tip"></div>
     <button class="tooltip-close" id="tooltip-close">閉じる</button>
+  </div>
+</div>
+
+<!-- History overlay -->
+<div class="history-overlay" id="history-overlay">
+  <div class="history-card">
+    <div class="history-header">
+      <h3>診断履歴</h3>
+      <button class="history-close-btn" id="history-close-btn">✕</button>
+    </div>
+    <div id="history-list"><p class="history-empty">読み込み中...</p></div>
   </div>
 </div>
 
@@ -1053,7 +1082,68 @@ document.getElementById('paywall-subscribe').addEventListener('click', () => sta
 function updateAuthUI() {
   const btn = document.getElementById('auth-toggle-btn');
   btn.textContent = currentUser ? 'ログアウト' : 'ログイン';
+  document.getElementById('history-btn').style.display = currentUser ? 'inline-block' : 'none';
 }
+
+// History
+async function saveHistory(data) {
+  if (!currentUser) return;
+  await supa.from('diagnosis_history').insert({
+    user_id: currentUser.id,
+    style: currentStyle,
+    scene: data.scene,
+    params: data.params
+  });
+}
+
+async function loadHistory() {
+  const { data, error } = await supa
+    .from('diagnosis_history')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  return error ? [] : (data || []);
+}
+
+function renderHistory(items) {
+  const el = document.getElementById('history-list');
+  if (!items.length) {
+    el.innerHTML = '<p class="history-empty">まだ診断履歴がありません</p>';
+    return;
+  }
+  el.innerHTML = items.map(item => {
+    const date = new Date(item.created_at);
+    const dateStr = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2,'0')}`;
+    const params = (item.params || []).slice(0, 6).map(p =>
+      `<div class="history-param">${escHtml(p.name)} <span>${p.value > 0 ? '+' : ''}${p.value}</span></div>`
+    ).join('');
+    return `
+      <div class="history-item">
+        <div class="history-item-top">
+          <div class="history-style">${escHtml(item.style || '未選択')}</div>
+          <div class="history-date">${dateStr}</div>
+        </div>
+        <div class="history-scene">${escHtml(item.scene || '')}</div>
+        <div class="history-params">${params}</div>
+      </div>`;
+  }).join('');
+}
+
+document.getElementById('history-btn').addEventListener('click', async () => {
+  document.getElementById('history-overlay').classList.add('open');
+  document.getElementById('history-list').innerHTML = '<p class="history-empty">読み込み中...</p>';
+  const items = await loadHistory();
+  renderHistory(items);
+});
+
+document.getElementById('history-close-btn').addEventListener('click', () => {
+  document.getElementById('history-overlay').classList.remove('open');
+});
+document.getElementById('history-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('history-overlay'))
+    document.getElementById('history-overlay').classList.remove('open');
+});
 
 document.getElementById('auth-toggle-btn').addEventListener('click', async () => {
   if (currentUser) {
@@ -1341,6 +1431,7 @@ async function analyze() {
 
     await incrementUsage();
     await updateUsageUI();
+    await saveHistory(data);
     renderResults(data);
   } catch (err) {
     errorMsg.textContent = 'エラー: ' + err.message;
