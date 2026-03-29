@@ -702,7 +702,11 @@
     <div class="usage-track"><div class="usage-fill" id="usage-fill" style="width:100%"></div></div>
   </div>
   <!-- DEV ONLY -->
-  <p style="text-align:center;margin-top:6px"><button onclick="devResetUsage()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;text-decoration:underline">［開発用］使用回数をリセット</button></p>
+  <p style="text-align:center;margin-top:6px;display:flex;gap:16px;justify-content:center">
+    <button onclick="devResetUsage()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;text-decoration:underline">［開発用］回数リセット</button>
+    <button onclick="devFakeLogin()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;text-decoration:underline">［開発用］ログイン状態に</button>
+    <button onclick="devFakeLogout()" style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;text-decoration:underline">［開発用］ログアウト状態に</button>
+  </p>
 
   <button class="analyze-btn" id="analyze-btn">✦ 診断する</button>
 
@@ -965,23 +969,24 @@ async function updateUsageUI() {
 async function devResetUsage() {
   localStorage.removeItem('ps_usage');
   if (currentUser) {
-    const { error } = await supa.from('user_usage')
-      .update({ count: 0, updated_at: new Date().toISOString() })
-      .eq('user_id', currentUser.id);
+    const { error } = await supa.from('user_usage').update({ count: 0, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
     if (error) { alert('DBエラー: ' + error.message); return; }
   }
   await updateUsageUI();
   alert('リセットしました');
 }
 
-async function devResetUsage() {
-  localStorage.removeItem('ps_usage');
-  if (currentUser) {
-    const { error } = await supa.from('user_usage').update({ count: 0, updated_at: new Date().toISOString() }).eq('user_id', currentUser.id);
-    if (error) { alert('DBエラー: ' + error.message); return; }
-  }
-  await updateUsageUI();
-  alert('リセットしました');
+function devFakeLogin() {
+  currentUser = { id: '00000000-0000-0000-0000-000000000001', email: 'dev@test.com' };
+  updateAuthUI();
+  updateUsageUI();
+  alert('開発用ログイン状態にしました（DBには接続しません）');
+}
+
+function devFakeLogout() {
+  currentUser = null;
+  updateAuthUI();
+  updateUsageUI();
 }
 
 function saveAfterImage() {
