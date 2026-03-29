@@ -848,7 +848,7 @@
 </div>
 
 <div style="text-align:center;padding:24px 0 40px;font-size:12px;color:var(--muted);">
-  <a href="mailto:humiyaandsora@gmail.com" style="color:var(--accent);text-decoration:none;">お問い合わせ</a>
+  <a href="https://mail.google.com/mail/?view=cm&fs=1&to=humiyaandsora@gmail.com" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">お問い合わせ</a>
 </div>
 
 <!-- Tooltip overlay -->
@@ -1104,15 +1104,7 @@ function cancelSubscription() {
   if (email) {
     const [local, domain] = email.split('@');
     const masked = local.length <= 2 ? (local[0] || '') + '***@' + (domain || '') : local.slice(0, 2) + '***@' + (domain || '');
-    const span = document.createElement('span');
-    span.textContent = '登録メール：' + masked;
-    const fillBtn = document.createElement('button');
-    fillBtn.textContent = '入力する';
-    fillBtn.type = 'button';
-    fillBtn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:var(--accent);font-size:11px;cursor:pointer;padding:3px 8px;font-family:inherit;flex-shrink:0;';
-    fillBtn.onclick = () => { document.getElementById('cancel-email-input').value = email; };
-    hint.appendChild(span);
-    hint.appendChild(fillBtn);
+    hint.textContent = '登録メール：' + masked;
   } else {
     hint.textContent = '登録メールアドレスを入力してください';
   }
